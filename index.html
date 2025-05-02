@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earth 2039 - Cyberpunk Idle Game</title> <!-- Updated Title -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="game-header">
+            <h1>Earth 2039</h1> <!-- Updated Header -->
+            <p>Lead the rebellion against GigaCorp</p> <!-- Updated Subtitle -->
+        </div>
+        
+        <div class="game-content">
+            <!-- Resources Panel (Updated for GDD) -->
+            <div class="resources-panel">
+                <h2>Resources</h2>
+                <div class="resources-grid">
+                    <div class="resource-container">
+                        <div class="resource-name">Credits</div>
+                        <div id="credits-value" class="resource-value">0.0</div>
+                        <div id="credits-rate" class="resource-rate">0.00/s</div>
+                    </div>
+                    <div class="resource-container">
+                        <div class="resource-name">Followers</div>
+                        <div id="followers-value" class="resource-value">0.0</div>
+                        <div id="followers-rate" class="resource-rate">0.00/s</div>
+                    </div>
+                    <div class="resource-container">
+                        <div class="resource-name">Influence</div> <!-- Renamed -->
+                        <div id="influence-value" class="resource-value">0.0</div> <!-- Renamed ID -->
+                        <div id="influence-rate" class="resource-rate">0.00/s</div> <!-- Renamed ID -->
+                    </div>
+                    <div class="resource-container">
+                        <div class="resource-name">Tech Points</div> <!-- Renamed -->
+                        <div id="techPoints-value" class="resource-value">0.0</div> <!-- Renamed ID -->
+                        <div id="techPoints-rate" class="resource-rate">0.00/s</div> <!-- Renamed ID -->
+                    </div>
+                    <div class="resource-container">
+                        <div class="resource-name">Energy</div>
+                        <div id="energy-value" class="resource-value">0.0</div>
+                        <div id="energy-rate" class="resource-rate">0.00/s</div>
+                    </div>
+                    <div class="resource-container">
+                        <div class="resource-name">Rebellion Str</div> <!-- Abbreviated -->
+                        <div id="rebellionStrength-value" class="resource-value">0.0</div>
+                        <div id="rebellionStrength-rate" class="resource-rate">0.00/s</div>
+                    </div>
+                    <div class="resource-container">
+                        <div class="resource-name">GigaTech</div>
+                        <div id="gigaTech-value" class="resource-value">0.0</div>
+                        <div id="gigaTech-rate" class="resource-rate">0.00/s</div>
+                    </div>
+                    <div class="resource-container">
+                        <div class="resource-name">Mind Ctrl Cntr</div> <!-- Abbreviated -->
+                        <div id="mindControlCounter-value" class="resource-value">0.0</div>
+                        <div id="mindControlCounter-rate" class="resource-rate">0.00/s</div>
+                    </div>
+                    <!-- Territory count could be added here if desired -->
+                </div>
+            </div>
+            
+            <!-- Manual Actions Panel (Updated) -->
+            <div class="operations-panel"> <!-- Keep class for styling? Or rename? -->
+                <button class="operation-button" onclick="mineCredits()">Mine Credits</button>
+                <button class="operation-button" onclick="collectTechPoints()">Collect Tech Points (5 Credits)</button> <!-- Renamed -->
+                <button class="operation-button" onclick="generateEnergy()">Generate Energy (10 Credits)</button>
+            </div>
+            
+            <!-- Tabs Panel (Updated for GDD) -->
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab active" data-tab="boosts-tab" onclick="switchTab('boosts-tab')">Boosts</button> <!-- Renamed -->
+                    <button class="tab" data-tab="items-tab" onclick="switchTab('items-tab')">Items</button> <!-- New Tab -->
+                    <button class="tab" data-tab="techTree-tab" onclick="switchTab('techTree-tab')">Tech Tree</button> <!-- Renamed -->
+                    <button class="tab" data-tab="territories-tab" onclick="switchTab('territories-tab')">Territories</button> <!-- Renamed -->
+                    <button class="tab" data-tab="missions-tab" onclick="switchTab('missions-tab')">Missions</button> <!-- Renamed -->
+                </div>
+                
+                <!-- Boosts Tab (Was Upgrades) -->
+                <div id="boosts-tab" class="tab-content" style="display: block;">
+                    <h2>Boosts</h2> <!-- Renamed -->
+                    <p>Purchase permanent boosts to improve your base resource generation.</p> <!-- Updated Desc -->
+                    <div id="boosts-list" class="upgrades-list"> <!-- Renamed ID -->
+                        <!-- Boosts will be dynamically added here -->
+                    </div>
+                </div>
+
+                <!-- Items Tab (New) -->
+                <div id="items-tab" class="tab-content">
+                    <h2>Items</h2>
+                    <p>Construct items to provide various bonuses and effects.</p>
+                    <div id="items-list" class="items-list"> <!-- New ID -->
+                        <!-- Items will be dynamically added here -->
+                    </div>
+                </div>
+                
+                <!-- Tech Tree Tab (Was Research) -->
+                <div id="techTree-tab" class="tab-content">
+                    <h2>Tech Tree</h2> <!-- Renamed -->
+                    <p>Research technologies to unlock new boosts, items, and capabilities.</p> <!-- Updated Desc -->
+                    <div id="techTree-list" class="research-list"> <!-- Renamed ID -->
+                        <!-- Tech Tree nodes will be dynamically added here -->
+                    </div>
+                </div>
+                
+                <!-- Territories Tab (Was Districts) -->
+                <div id="territories-tab" class="tab-content">
+                    <h2>Territories</h2> <!-- Renamed -->
+                    <p>Expand your control by unlocking and activating territories for bonuses.</p> <!-- Updated Desc -->
+                    <div id="territories-list" class="districts-list"> <!-- Renamed ID -->
+                        <!-- Territories will be dynamically added here -->
+                    </div>
+                </div>
+                
+                <!-- Missions Tab (Was Operations) -->
+                <div id="missions-tab" class="tab-content">
+                    <h2>Missions</h2> <!-- Renamed -->
+                    <p>Undertake missions to gain significant rewards and advance the story. (Coming Soon)</p> <!-- Updated Desc -->
+                    <div id="missions-list" class="operations-list"> <!-- Renamed ID -->
+                        <!-- Missions will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Log Panel -->
+            <div class="log-panel">
+                <div class="log-header">
+                    <h2>System Log</h2>
+                </div>
+                <div id="log-container" class="log-container">
+                    <!-- Log entries will be dynamically added here -->
+                </div>
+                <input type="text" id="dev-console-input" class="dev-console-input" placeholder="Enter dev command...">
+            </div>
+            
+            <!-- Achievements Button -->
+            <button class="achievements-button" onclick="toggleAchievements()">Achievements</button>
+            
+            <!-- Achievements Section -->
+            <div id="achievements-section" class="achievements-section">
+                <h2>Achievements</h2>
+                <div id="achievements-list" class="achievements-list">
+                    <!-- Achievements will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Modal Title</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modal-content">
+                <!-- Modal content will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="game.js"></script>
+    <script src="progression.js"></script>
+    <script src="visual-effects.js"></script>
+</body>
+</html>
+
