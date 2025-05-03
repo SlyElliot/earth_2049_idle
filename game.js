@@ -348,7 +348,7 @@ let gameState = {
         },
         industrialZone: {
             name: "Industrial Zone",
-            cost: { credits: 500, influence: 25 },
+            cost: { credits: 500, followers: 50, influence: 25 },
             effect: { creditsRateBonus: 0.08 }, // +8% Credits Rate
             effectDesc: "High resource production area.",
             unlocked: false,
@@ -357,7 +357,7 @@ let gameState = {
         },
         techDistrict: {
             name: "Tech District",
-            cost: { credits: 1000, techPoints: 100 },
+            cost: { credits: 1000, followers: 75, techPoints: 100 },
             effect: { techPointsRateBonus: 0.08 }, // +8% Tech Point Rate
             effectDesc: "Key for technology-related resources.",
             unlocked: false,
@@ -366,7 +366,7 @@ let gameState = {
         },
         harborArea: {
             name: "Harbor Area",
-            cost: { credits: 2000, energy: 50 },
+            cost: { credits: 2000, followers: 100, energy: 50 },
             effect: { creditsRateBonus: 0.05, energyRateBonus: 0.05 }, // +5% Credits and Energy Rate
             effectDesc: "Strategic for trade and resources.",
             unlocked: false,
@@ -375,7 +375,7 @@ let gameState = {
         },
         livingTowers: {
             name: "The Living Towers",
-            cost: { credits: 2500, influence: 150 },
+            cost: { credits: 2500, followers: 150, influence: 150 },
             effect: { followersRateBonus: 0.1 }, // +10% Followers Rate
             effectDesc: "Population-dense area for followers.",
             unlocked: false,
@@ -393,7 +393,7 @@ let gameState = {
         },
         muskersTerritory: {
             name: "Muskers Territory",
-            cost: { credits: 4000, techPoints: 250 },
+            cost: { credits: 4000, followers: 250, techPoints: 250 },
             effect: { techPointsRateBonus: 0.1, energyRateBonus: 0.05 }, // +10% Tech Points, +5% Energy
             effectDesc: "Advanced tech capabilities.",
             unlocked: false,
@@ -402,7 +402,7 @@ let gameState = {
         },
         cryptidsDomain: {
             name: "Cryptids Domain",
-            cost: { credits: 5000, influence: 300, energy: 150 },
+            cost: { credits: 5000, followers: 300, influence: 300, energy: 150 },
             effect: { creditsRateBonus: 0.15 }, // +15% Credits Rate
             effectDesc: "High-risk, high-reward missions.",
             unlocked: false,
@@ -420,7 +420,7 @@ let gameState = {
         },
         mechRebelsBase: {
             name: "Mech Rebels Base",
-            cost: { credits: 8000, techPoints: 400, energy: 200 },
+            cost: { credits: 8000, followers: 400, techPoints: 400, energy: 200 },
             effect: { rebellionStrengthRateBonus: 0.1, energyRateBonus: 0.08 }, // +10% Rebellion Strength, +8% Energy
             effectDesc: "Special missions and resources.",
             unlocked: false,
@@ -429,7 +429,7 @@ let gameState = {
         },
         hackersDen: {
             name: "Hackers Den",
-            cost: { credits: 7000, techPoints: 350 },
+            cost: { credits: 7000, followers: 350, techPoints: 350 },
             effect: { techPointsRateBonus: 0.12 }, // +12% Tech Point Rate
             effectDesc: "Enhances tech abilities.",
             unlocked: false,
@@ -447,7 +447,7 @@ let gameState = {
         },
         abandonedSector: {
             name: "Abandoned Sector",
-            cost: { credits: 3500, energy: 100 },
+            cost: { credits: 3500, followers: 150, energy: 100 },
             effect: { creditsRateBonus: 0.05, energyRateBonus: 0.05, techPointsRateBonus: 0.05 }, // +5% to multiple resources
             effectDesc: "Low-risk resource gain.",
             unlocked: false,
@@ -456,7 +456,7 @@ let gameState = {
         },
         aiLabs: {
             name: "Artificial Intelligence Labs",
-            cost: { credits: 10000, techPoints: 600, energy: 300 },
+            cost: { credits: 10000, followers: 600, techPoints: 600, energy: 300 },
             effect: { techPointsRateBonus: 0.15, rebellionStrengthRateBonus: 0.05 }, // +15% Tech Points, +5% Rebellion Strength
             effectDesc: "Advanced tech resources.",
             unlocked: false,
@@ -686,9 +686,9 @@ function updateRates() {
         }
     }
     
-    // 5. Generate followers from influence (1% of total influence per second)
+    // 5. Generate followers from influence (0.0001% of total influence per second)
     if (gameState.resources.influence > 0) {
-        const followerFromInfluence = gameState.resources.influence * 0.01;
+        const followerFromInfluence = gameState.resources.influence * 0.000001;
         gameState.rates.followers += followerFromInfluence;
     }
 
@@ -956,7 +956,7 @@ function researchTech(techId) {
     }
 }
 
-function unlockTerritory(territoryId) {
+function captureTerritory(territoryId) {
     const territory = gameState.territories[territoryId];
     if (!territory || territory.unlocked) return;
 
@@ -991,13 +991,13 @@ function unlockTerritory(territoryId) {
             gameState.resources[resource] -= cost[resource];
         }
         territory.unlocked = true;
-        territory.active = true; // Automatically activate on unlock? Or require separate activation?
-        addLogMessage(`Territory unlocked and activated: ${territory.name}.`);
+        territory.active = true; // Automatically activate on capture
+        addLogMessage(`Territory captured and activated: ${territory.name}.`);
         updateRates();
         updateResourceDisplay();
         updateTerritoriesDisplay(); // Refresh territory display
     } else {
-        addLogMessage(`Insufficient resources to unlock ${territory.name}.`);
+        addLogMessage(`Insufficient resources to capture ${territory.name}.`);
     }
 }
 
@@ -1126,7 +1126,7 @@ function updateResourceDisplay() {
         // Add tooltip for followers rate to show influence bonus
         const followersRateElement = document.getElementById("followers-rate");
         if (followersRateElement && gameState.resources.influence > 0) {
-            const influenceBonus = gameState.resources.influence * 0.01;
+            const influenceBonus = gameState.resources.influence * 0.000001;
             followersRateElement.title = `+${formatNumber(influenceBonus)}/s from Influence`;
         }
 
@@ -1136,7 +1136,7 @@ function updateResourceDisplay() {
         // Add tooltip for influence value to show follower generation
         const influenceElement = document.getElementById("influence-value");
         if (influenceElement && gameState.resources.influence > 0) {
-            const followersGenerated = gameState.resources.influence * 0.01;
+            const followersGenerated = gameState.resources.influence * 0.000001;
             influenceElement.title = `Generates ${formatNumber(followersGenerated)} followers/s`;
         }
 
@@ -1687,7 +1687,7 @@ function updateTerritoriesDisplay() {
         livingTowers: { x: 32, y: 50, icon: "🏢" },
         governmentQuarter: { x: 50, y: 5, icon: "🏛️" },
         muskersTerritory: { x: 70, y: 40, icon: "🚀" },
-        cryptidsDomain: { x: 55, y: 85, icon: "👾" },
+        cryptidsDomain: { x: 50, y: 85, icon: "👾" },
         shillzCentral: { x: 45, y: 25, icon: "📢" },
         mechRebelsBase: { x: 20, y: 60, icon: "🤖" },
         hackersDen: { x: 70, y: 70, icon: "🕸️" },
@@ -1891,7 +1891,7 @@ function updateTerritoryInfoPanel(territoryId) {
             statusText = territory.active ? "Active" : "Inactive";
             statusClass = territory.active ? "active" : "unlocked";
         } else {
-            statusText = prereqsMet ? "Available to Unlock" : "Locked";
+            statusText = prereqsMet ? "Available to Capture" : "Locked";
             statusClass = prereqsMet ? "unlockable" : "locked";
         }
         
@@ -1972,16 +1972,16 @@ function updateTerritoryInfoPanel(territoryId) {
             actionButton.className = "territory-button " + (territory.active ? "deactivate" : "activate");
             actionButton.disabled = false;
             actionButton.onclick = () => {
-                activateTerritory(territoryId);
+                captureTerritory(territoryId);
                 updateTerritoriesDisplay();
             };
         } else if (prereqsMet) {
             // Territory is unlockable, show unlock button
-            actionButton.textContent = "Unlock Territory";
+            actionButton.textContent = "Capture Territory";
             actionButton.className = "territory-button unlock";
             actionButton.disabled = !canAfford;
             actionButton.onclick = () => {
-                unlockTerritory(territoryId);
+                captureTerritory(territoryId);
                 updateTerritoriesDisplay();
             };
         } else {
@@ -2062,7 +2062,7 @@ function gameLoop() {
     updateRebellionStrength();
 
     // Update UI
-    updateAllDisplays(); // Refresh all displays
+    updateResourceDisplay(); // Refresh all displays
 
     // Check for progression triggers
     checkProgressionTriggers();
@@ -2160,7 +2160,7 @@ window.generateEnergy = generateEnergy;
 window.buyBoost = buyBoost;
 window.buyItem = buyItem;
 window.researchTech = researchTech;
-window.unlockTerritory = unlockTerritory;
+window.captureTerritory = captureTerritory;
 window.activateTerritory = activateTerritory;
 window.switchTab = switchTab;
 window.toggleAchievements = toggleAchievements;
@@ -2621,10 +2621,10 @@ function updateButtonStates() {
     });
 
     // Update Territory buttons
-    const territoryButtons = document.querySelectorAll('#territories-list button[onclick^="unlockTerritory"]');
+    const territoryButtons = document.querySelectorAll('#territories-list button[onclick^="captureTerritory"]');
     territoryButtons.forEach(button => {
         try {
-            const territoryId = button.getAttribute('onclick').match(/unlockTerritory\('([^']+)'\)/)[1];
+            const territoryId = button.getAttribute('onclick').match(/captureTerritory\('([^']+)'\)/)[1];
             const territory = gameState.territories[territoryId];
             if (!territory || territory.unlocked) return; // Skip if not found or already unlocked
             const cost = territory.cost;
@@ -2820,13 +2820,13 @@ function handleDevCommand(command) {
 // How many GigaTech would the player gain right now?
 function calculateGigaTechGain() {
     const value =
-        (gameState.resources.credits      / 1_000) +
-        (gameState.resources.followers    /   100) +
-        (gameState.resources.techPoints   /    50) +
-        (gameState.resources.influence    /   100) +
-        (gameState.resources.energy       /   100);
+        (gameState.resources.credits      / 10_000) +
+        (gameState.resources.followers    /  1_000) +
+        (gameState.resources.techPoints   /    500) +
+        (gameState.resources.influence    /  1_000) +
+        (gameState.resources.energy       /  1_000);
 
-    return Math.floor(Math.sqrt(value));       // √-scaling, floor to int
+    return Math.floor(Math.sqrt(value / 2));       // √-scaling with additional divisor, floor to int
 }
 
 // Calculate victory chance against GigaCorp
