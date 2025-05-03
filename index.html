@@ -12,7 +12,7 @@
 <body>
     <div class="container">
         <div class="game-header">
-            <h1>Earth 2039</h1> <!-- Updated Header -->
+            <h1>Earth 2049</h1>
             <p>Lead the rebellion against GigaCorp</p> <!-- Updated Subtitle -->
         </div>
         
@@ -27,14 +27,14 @@
                         <div id="credits-rate" class="resource-rate">0.00/s</div>
                     </div>
                     <div class="resource-container">
-                        <div class="resource-name">Followers</div>
+                        <div class="resource-name">Followers <span class="help-icon" title="Grows based on your Influence (1% of Influence per second)">?</span></div>
                         <div id="followers-value" class="resource-value">0.0</div>
                         <div id="followers-rate" class="resource-rate">0.00/s</div>
                     </div>
                     <div class="resource-container">
-                        <div class="resource-name">Influence</div> <!-- Renamed -->
-                        <div id="influence-value" class="resource-value">0.0</div> <!-- Renamed ID -->
-                        <div id="influence-rate" class="resource-rate">0.00/s</div> <!-- Renamed ID -->
+                        <div class="resource-name">Influence <span class="help-icon" title="Your social power - generates Followers (1% per second)">?</span></div>
+                        <div id="influence-value" class="resource-value">0.0</div>
+                        <div id="influence-rate" class="resource-rate">0.00/s</div>
                     </div>
                     <div class="resource-container">
                         <div class="resource-name">Tech Points</div> <!-- Renamed -->
@@ -47,17 +47,17 @@
                         <div id="energy-rate" class="resource-rate">0.00/s</div>
                     </div>
                     <div class="resource-container">
-                        <div class="resource-name">Rebellion Str</div> <!-- Abbreviated -->
+                        <div class="resource-name">Rebellion Str <span class="help-icon" title="Power of your rebellion against GigaCorp. Reach 100+ to unlock the Attack GigaCorp action.">?</span></div>
                         <div id="rebellionStrength-value" class="resource-value">0.0</div>
                         <div id="rebellionStrength-rate" class="resource-rate">0.00/s</div>
                     </div>
                     <div class="resource-container">
-                        <div class="resource-name">GigaTech</div>
+                        <div class="resource-name">GigaTech <span class="help-icon" title="Stolen GigaCorp technology. Each gives +2% to all resource rates.">?</span></div>
                         <div id="gigaTech-value" class="resource-value">0.0</div>
                         <div id="gigaTech-rate" class="resource-rate">0.00/s</div>
                     </div>
                     <div class="resource-container">
-                        <div class="resource-name">Mind Ctrl Cntr</div> <!-- Abbreviated -->
+                        <div class="resource-name">Mind Ctrl Cntr <span class="help-icon" title="GigaCorp mind control influence. Reduces your chance to defeat them.">?</span></div>
                         <div id="mindControlCounter-value" class="resource-value">0.0</div>
                         <div id="mindControlCounter-rate" class="resource-rate">0.00/s</div>
                     </div>
@@ -70,7 +70,13 @@
                 <button class="operation-button" onclick="mineCredits()">Mine Credits</button>
                 <button class="operation-button" onclick="collectTechPoints()">Collect Tech Points (5 Credits)</button> <!-- Renamed -->
                 <button class="operation-button" onclick="generateEnergy()">Generate Energy (10 Credits)</button>
+                <button class="operation-button" onclick="upgradeTuring()">Upgrade Turing (Lvl <span id="turing-level">1</span>)</button>
             </div>
+            
+            <!-- Attack GigaCorp Button -->
+            <button id="prestige-button" class="attack-gigacorp-button" onclick="confirmPrestige()">
+                ATTACK GIGACORP
+            </button>
             
             <!-- Tabs Panel (Updated for GDD) -->
             <div class="tabs-container">
@@ -104,17 +110,84 @@
                 <div id="techTree-tab" class="tab-content">
                     <h2>Tech Tree</h2> <!-- Renamed -->
                     <p>Research technologies to unlock new boosts, items, and capabilities.</p> <!-- Updated Desc -->
-                    <div id="techTree-list" class="research-list"> <!-- Renamed ID -->
-                        <!-- Tech Tree nodes will be dynamically added here -->
+                    
+                    <div class="tech-tree-container-layout">
+                        <!-- Tech Tree Viewport (similar to city-map) -->
+                        <div class="tech-tree-container" id="tech-tree-container">
+                            <!-- Tech nodes and connections will be dynamically added here -->
+                        </div>
+                        
+                        <!-- Tech Info Panel (similar to territory-info-panel) -->
+                        <div class="tech-info-panel">
+                            <h3 id="tech-info-name">Select a Technology</h3>
+                            <p id="tech-info-desc">Click on a technology in the tree to view details.</p>
+                            
+                            <div id="tech-info-details" style="display: none;">
+                                <div class="tech-status">
+                                    <span id="tech-status-label">Status:</span>
+                                    <span id="tech-status-value">Locked</span>
+                                </div>
+                                
+                                <div id="tech-effects">
+                                    <h4>Effects:</h4>
+                                    <p id="tech-effects-text">No effects</p>
+                                </div>
+                                
+                                <div id="tech-cost">
+                                    <h4>Research Cost:</h4>
+                                    <p id="tech-cost-text">No cost</p>
+                                </div>
+                                
+                                <div id="tech-requirements">
+                                    <h4>Requirements:</h4>
+                                    <p id="tech-requirements-text">No requirements</p>
+                                </div>
+                                
+                                <div class="tech-action">
+                                    <button id="tech-action-button" class="tech-button" onclick="researchSelectedTech()" disabled>Select a technology</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Territories Tab (Was Districts) -->
                 <div id="territories-tab" class="tab-content">
-                    <h2>Territories</h2> <!-- Renamed -->
-                    <p>Expand your control by unlocking and activating territories for bonuses.</p> <!-- Updated Desc -->
-                    <div id="territories-list" class="districts-list"> <!-- Renamed ID -->
-                        <!-- Territories will be dynamically added here -->
+                    <h2>City Map</h2>
+                    <p>Expand your control by unlocking and activating territories across the city.</p>
+                    
+                    <div class="city-map-container">
+                        <!-- City Map Background -->
+                        <div class="city-map">
+                            <!-- Map locations will be dynamically added here -->
+                        </div>
+                        
+                        <!-- Territory Info Panel -->
+                        <div class="territory-info-panel">
+                            <h3 id="territory-info-name">Select a Territory</h3>
+                            <p id="territory-info-desc">Click on a location on the map to view details.</p>
+                            
+                            <div id="territory-info-details" style="display: none;">
+                                <div class="territory-status">
+                                    <span id="territory-status-label">Status:</span>
+                                    <span id="territory-status-value">Locked</span>
+                                </div>
+                                
+                                <div id="territory-effects">
+                                    <h4>Effects:</h4>
+                                    <p id="territory-effects-text">No effects</p>
+                                </div>
+                                
+                                <div id="territory-cost" style="display: none;">
+                                    <h4>Unlock Cost:</h4>
+                                    <p id="territory-cost-text">No cost</p>
+                                </div>
+                                
+                                <div class="territory-action">
+                                    <button id="territory-action-button" class="territory-button" disabled>Select a territory</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -161,6 +234,27 @@
             </div>
             <div id="modal-content">
                 <!-- Modal content will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dialogue System -->
+    <div id="dialogue-box" class="dialogue-box" style="display: none;">
+        <div class="dialogue-header">
+            <span id="dialogue-character-name">Character Name</span>
+            <button class="dialogue-close" onclick="closeDialogue()">&times;</button>
+        </div>
+        <div class="dialogue-content">
+            <div class="dialogue-portrait">
+                <img id="dialogue-portrait-img" src="" alt="Character Portrait">
+                <div id="dialogue-portrait-animated" class="dialogue-portrait-animated" style="display: none;"></div>
+            </div>
+            <div class="dialogue-text-container">
+                <p id="dialogue-text">Dialogue text will appear here...</p>
+                <div class="dialogue-controls">
+                    <button id="dialogue-next" class="dialogue-next-button" onclick="nextDialogue()">Next</button>
+                    <button id="dialogue-skip" class="dialogue-skip-button" onclick="closeDialogue()">Skip</button>
+                </div>
             </div>
         </div>
     </div>

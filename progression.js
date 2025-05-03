@@ -13,6 +13,9 @@ function initProgressionSystem() {
     // Initialize achievements
     initAchievements();
     
+    // Enhance resetAfterAttack to include Turing dialogues
+    enhanceResetAfterAttack();
+    
     // Start checking for progression triggers
     setInterval(checkProgressionTriggers, 5000);
     
@@ -131,6 +134,49 @@ function initStoryEvents() {
                 }, 2000);
             }
         },
+        
+        // Turing introduction - triggers after the player has earned their first 20 credits
+        turingIntroduction: {
+            triggered: false,
+            condition: () => gameState.resources.credits >= 20,
+            action: () => {
+                showDialogue("turing_introduction");
+                
+                // Add log message about Turing
+                addLogMessage("A mysterious AI entity called Turing has appeared to assist your rebellion.");
+            }
+        },
+        
+        // Turing rebellion growing - triggers when rebellion strength reaches 50
+        turingRebellionGrowing: {
+            triggered: false,
+            condition: () => gameState.resources.rebellionStrength >= 50,
+            action: () => {
+                showDialogue("turing_rebellion_growing");
+                addLogMessage("Turing has detected increased GigaCorp security activity.");
+            }
+        },
+        
+        // Turing territory expansion - triggers when player unlocks any territory
+        turingTerritoryExpansion: {
+            triggered: false,
+            condition: () => Object.values(gameState.territories).some(territory => territory.unlocked),
+            action: () => {
+                showDialogue("turing_territory_expansion");
+                addLogMessage("Turing is analyzing your territorial expansion.");
+            }
+        },
+        
+        // Turing attack ready - triggers when rebellion strength reaches 100
+        turingAttackReady: {
+            triggered: false,
+            condition: () => gameState.resources.rebellionStrength >= 100,
+            action: () => {
+                showDialogue("turing_attack_ready");
+                addLogMessage("Turing advises that your rebellion is now strong enough to attack GigaCorp directly.");
+            }
+        },
+        
         corporateRivalry: {
             triggered: false,
             condition: () => gameState.baseProductionBoosts.autoMiner?.level >= 5, // Updated reference to autoMiner
@@ -368,76 +414,78 @@ function initAchievements() {
     gameState.progression.achievements = {
         firstSteps: {
             name: "First Steps",
-            description: "Earn your first credit.",
-            unlocked: false
+            desc: "Earn your first credit in the system.",
+            achieved: false
         },
         upgradeInitiate: {
-            name: "Boost Initiate", // Renamed
-            description: "Purchase your first boost.",
-            unlocked: false
+            name: "Upgrade Initiate",
+            desc: "Purchase your first boost.",
+            achieved: false
         },
         researchBeginnings: {
-            name: "Tech Beginnings", // Renamed
-            description: "Complete your first tech research.",
-            unlocked: false
+            name: "Research Beginnings",
+            desc: "Complete your first tech research.",
+            achieved: false
         },
         districtExpansion: {
-            name: "Territory Expansion", // Renamed
-            description: "Unlock your first territory.",
-            unlocked: false
-        },
-        quantumPioneer: {
-            name: "Hacking Pioneer", // Renamed
-            description: "Unlock advanced hacking capabilities.", // Updated description
-            unlocked: false
-        },
-        corporateClimber: {
-            name: "Influence Climber", // Renamed
-            description: "Reach 1,000 credits.",
-            unlocked: false
+            name: "District Expansion",
+            desc: "Unlock your first territory.",
+            achieved: false
         },
         dataMonger: {
-            name: "Tech Monger", // Renamed
-            description: "Accumulate 500 tech points.", // Updated resource name
-            unlocked: false
+            name: "Data Monger",
+            desc: "Accumulate 500 tech points.",
+            achieved: false
+        },
+        corporateClimber: {
+            name: "Corporate Climber",
+            desc: "Accumulate 1,000 credits.",
+            achieved: false
         },
         energyMogul: {
             name: "Energy Mogul",
-            description: "Accumulate 300 energy.",
-            unlocked: false
+            desc: "Accumulate 300 energy.",
+            achieved: false
         },
         infamousHacker: {
-            name: "Infamous Figure", // Renamed
-            description: "Reach 200 influence.", // Updated resource name
-            unlocked: false
+            name: "Infamous Hacker",
+            desc: "Gain 200 influence points.",
+            achieved: false
+        },
+        corporateOverlord: {
+            name: "Corporate Overlord",
+            desc: "Become a true power in the dystopian society.",
+            achieved: false
         },
         securityMinded: {
             name: "Security Minded",
-            description: "Upgrade your security systems.",
-            unlocked: false
+            desc: "Upgrade your security against corporate espionage.",
+            achieved: false
         },
-        corporateOverlord: {
-            name: "Rebellion Leader", // Renamed
-            description: "Reach 5,000 credits, 2,000 tech points, 1,000 energy, and 500 influence.", // Updated resource names
-            unlocked: false
+        gigaCorpDefeat: {
+            name: "GigaCorp's Downfall",
+            desc: "Successfully attack and defeat GigaCorp headquarters.",
+            achieved: false
         }
     };
 }
 
-// Unlock an achievement
+// Function to unlock an achievement
 function unlockAchievement(achievementId) {
-    if (gameState.progression.achievements[achievementId] && !gameState.progression.achievements[achievementId].unlocked) {
-        gameState.progression.achievements[achievementId].unlocked = true;
-        addLogMessage(`Achievement Unlocked: ${gameState.progression.achievements[achievementId].name}`);
+    console.log(`Unlocking achievement: ${achievementId}`);
+    const achievement = gameState.progression.achievements[achievementId];
+    if (achievement && !achievement.achieved) {
+        achievement.achieved = true;
+        // Achievement notification or sound effect
+        addLogMessage(`Achievement Unlocked: ${achievement.name}`);
+        playSound('sounds/click.wav');
         updateAchievementsDisplay();
-        // Optionally show a notification
-        // showNotification(`Achievement Unlocked: ${gameState.progression.achievements[achievementId].name}`);
     }
 }
 
-// Check for progression triggers (milestones, story events)
+// Check for progression triggers
 function checkProgressionTriggers() {
-    // Check Milestones
+    // Check for milestones
     for (const milestoneId in gameState.progression.milestones) {
         const milestone = gameState.progression.milestones[milestoneId];
         if (!milestone.triggered && milestone.condition()) {
@@ -446,12 +494,12 @@ function checkProgressionTriggers() {
         }
     }
     
-    // Check Story Events
+    // Check for story events
     for (const eventId in gameState.progression.storyEvents) {
-        const storyEvent = gameState.progression.storyEvents[eventId];
-        if (!storyEvent.triggered && storyEvent.condition()) {
-            storyEvent.triggered = true;
-            storyEvent.action();
+        const event = gameState.progression.storyEvents[eventId];
+        if (!event.triggered && event.condition()) {
+            event.triggered = true;
+            event.action();
         }
     }
 }
@@ -466,10 +514,10 @@ function updateAchievementsDisplay() {
     let unlockedCount = 0;
     for (const achievementId in gameState.progression.achievements) {
         const achievement = gameState.progression.achievements[achievementId];
-        if (achievement.unlocked) {
+        if (achievement.achieved) {
             const achievementElement = document.createElement('div');
             achievementElement.classList.add('achievement-item', 'unlocked');
-            achievementElement.innerHTML = `<strong>${achievement.name}</strong>: ${achievement.description}`;
+            achievementElement.innerHTML = `<strong>${achievement.name}</strong>: ${achievement.desc}`;
             achievementsList.appendChild(achievementElement);
             unlockedCount++;
         }
@@ -489,5 +537,26 @@ function toggleAchievements() {
         achievementsSection.style.display = 'block';
         updateAchievementsDisplay(); // Update content when shown
     }
+}
+
+// Enhance the resetAfterAttack function to trigger Turing dialogue
+function enhanceResetAfterAttack() {
+    // Store the original function
+    const originalResetAfterAttack = window.resetAfterAttack;
+    
+    // Replace with enhanced version
+    window.resetAfterAttack = function(wasSuccessful) {
+        // Call the original function
+        originalResetAfterAttack(wasSuccessful);
+        
+        // Show appropriate Turing dialogue
+        setTimeout(() => {
+            if (wasSuccessful) {
+                showDialogue("turing_after_success");
+            } else {
+                showDialogue("turing_after_failure");
+            }
+        }, 2000); // Short delay after reset
+    };
 }
 
