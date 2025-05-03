@@ -580,6 +580,9 @@ document.addEventListener("DOMContentLoaded", function initGame() {
         });
     }
 
+    // Handle mobile touch events for tech tree and map
+    setupMobileTouchHandling();
+
     // Set initial active tab
     if (gameState.progression.unlockedTabs && gameState.progression.unlockedTabs.length > 0) {
         switchTab(gameState.progression.unlockedTabs[0]);
@@ -590,6 +593,100 @@ document.addEventListener("DOMContentLoaded", function initGame() {
     console.log("Game initialized successfully.");
     addLogMessage("Welcome to Earth 2039. Initiate operations.");
 });
+
+// Setup mobile touch handling for tech tree and territories
+function setupMobileTouchHandling() {
+    // Detect if we're on a mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        console.log("Mobile device detected, applying mobile optimizations");
+        
+        // Optimize tech tree for mobile
+        const techTreeContainer = document.getElementById("tech-tree-container");
+        const techInfoPanel = document.querySelector(".tech-info-panel");
+        if (techTreeContainer) {
+            // Handle double tap on tech nodes to select on mobile
+            techTreeContainer.addEventListener("touchend", function(e) {
+                if (e.target.closest(".tech-node")) {
+                    // Prevent default to avoid zoom/scroll conflicts
+                    e.preventDefault();
+                    
+                    // Get the tech node
+                    const techNode = e.target.closest(".tech-node");
+                    
+                    // Simulate click
+                    techNode.click();
+                }
+            });
+            
+            // Setup floating action buttons for tech tree tab
+            const techInfoFab = document.getElementById("tech-info-fab");
+            const techTreeFab = document.getElementById("tech-tree-fab");
+            
+            if (techInfoFab && techTreeFab && techInfoPanel) {
+                // Show tree, hide info panel
+                techTreeFab.addEventListener("click", function() {
+                    techInfoPanel.style.display = "none";
+                    techTreeContainer.style.display = "block";
+                    techTreeContainer.parentElement.style.flexDirection = "column";
+                });
+                
+                // Show info panel, hide tree
+                techInfoFab.addEventListener("click", function() {
+                    if (window.selectedTechId) {
+                        techTreeContainer.style.display = "none";
+                        techInfoPanel.style.display = "block"; 
+                    } else {
+                        addLogMessage("Select a technology first");
+                    }
+                });
+            }
+        }
+        
+        // Optimize territories for mobile
+        const cityMap = document.querySelector(".city-map");
+        const territoryInfoPanel = document.querySelector(".territory-info-panel");
+        if (cityMap) {
+            // Handle double tap on territory nodes to select on mobile
+            cityMap.addEventListener("touchend", function(e) {
+                if (e.target.closest(".territory-location")) {
+                    // Prevent default to avoid zoom/scroll conflicts
+                    e.preventDefault();
+                    
+                    // Get the territory location
+                    const territoryNode = e.target.closest(".territory-location");
+                    
+                    // Simulate click
+                    territoryNode.click();
+                }
+            });
+            
+            // Setup floating action buttons for territory tab
+            const territoryInfoFab = document.getElementById("territory-info-fab");
+            const territoryMapFab = document.getElementById("territory-map-fab");
+            
+            if (territoryInfoFab && territoryMapFab && territoryInfoPanel) {
+                // Show map, hide info panel
+                territoryMapFab.addEventListener("click", function() {
+                    territoryInfoPanel.style.display = "none";
+                    cityMap.style.display = "block";
+                    cityMap.parentElement.style.flexDirection = "column";
+                });
+                
+                // Show info panel, hide map
+                territoryInfoFab.addEventListener("click", function() {
+                    if (document.querySelector(".territory-location.selected")) {
+                        cityMap.style.display = "none";
+                        territoryInfoPanel.style.display = "block"; 
+                    } else {
+                        addLogMessage("Select a territory first");
+                    }
+                });
+            }
+        }
+    }
+}
 
 // --- Game Logic ---
 

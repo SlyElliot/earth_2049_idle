@@ -868,6 +868,11 @@ p {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .container {
+        padding: 0.5rem;
+        max-width: 100%;
+    }
+    
     .resources-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -889,6 +894,112 @@ p {
         min-width: 120px;
         font-size: 0.9rem;
     }
+    
+    /* Tech Tree Mobile Improvements */
+    .tech-tree-container-layout {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .tech-tree-container {
+        height: 500px;
+        width: 100%;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .tech-info-panel {
+        width: 100%;
+        max-height: none;
+        margin-top: 1rem;
+    }
+    
+    /* Territory Mobile Improvements */
+    .city-map-container {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .city-map {
+        height: 500px;
+        width: 100%;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .territory-info-panel {
+        width: 100%;
+        max-height: none;
+        margin-top: 1rem;
+    }
+    
+    /* Tech nodes and territories responsive sizing */
+    .tech-node {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .tech-node-icon {
+        font-size: 1.5rem;
+    }
+    
+    .tech-node-name {
+        font-size: 0.8rem;
+    }
+    
+    .tech-node-desc {
+        font-size: 0.6rem;
+    }
+    
+    .territory-location {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .territory-location:before {
+        width: 75px;
+        height: 75px;
+    }
+    
+    .territory-location-icon {
+        font-size: 20px;
+    }
+    
+    .territory-location-name {
+        font-size: 0.8rem;
+        bottom: -25px;
+    }
+    
+    /* Dialogue system mobile adjustments */
+    .dialogue-box {
+        width: 95%;
+        bottom: 10px;
+    }
+    
+    .dialogue-content {
+        flex-direction: column;
+    }
+    
+    .dialogue-portrait {
+        margin-right: 0;
+        margin-bottom: 10px;
+        align-self: center;
+    }
+    
+    /* iOS specific scrolling fixes */
+    .tech-tree-container, .city-map {
+        overflow-scrolling: touch;
+        -webkit-overflow-scrolling: touch;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+    }
+    
+    /* Fix for tab content scrolling on iOS */
+    .tab-content {
+        -webkit-overflow-scrolling: touch;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+    }
 }
 
 @media (max-width: 480px) {
@@ -907,6 +1018,82 @@ p {
     .operation-button {
         width: 100%;
         margin-bottom: 0.5rem;
+    }
+    
+    /* Tech Tree & Territories even more compact for small screens */
+    .tech-tree-container {
+        height: 400px;
+        padding: 10px;
+    }
+    
+    .city-map {
+        height: 400px;
+    }
+    
+    .tech-node {
+        width: 80px;
+        height: 80px;
+        padding: 5px;
+    }
+    
+    .tech-node-icon {
+        font-size: 1.3rem;
+    }
+    
+    .tech-node-name {
+        font-size: 0.7rem;
+    }
+    
+    .tech-node-desc {
+        display: none; /* Hide description on very small screens */
+    }
+    
+    .territory-location {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .territory-location:before {
+        width: 60px;
+        height: 60px;
+    }
+    
+    /* Modal improvements for small screens */
+    .modal-content {
+        width: 95%;
+        padding: 1rem;
+    }
+    
+    /* Attack button adjustments */
+    .attack-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Additional tab adjustments */
+    #techTree-tab, #territories-tab {
+        padding: 1rem 0.5rem;
+    }
+}
+
+/* Touch device improvements */
+@media (hover: none) {
+    /* Make buttons larger for touch targets */
+    .tech-node, .territory-location {
+        transition: transform 0.2s ease;
+    }
+    
+    .tech-node:active, .territory-location:active {
+        transform: scale(1.1);
+    }
+    
+    /* Improve scrolling on touch devices */
+    .tech-tree-container, .city-map {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Larger touch targets */
+    .tab, .operation-button, .territory-button, .tech-button {
+        min-height: 44px; /* Apple's recommended minimum touch target size */
     }
 }
 
@@ -1226,6 +1413,9 @@ p {
     background-size: cover;
     background-position: center;
     box-shadow: inset 0 0 50px rgba(0, 255, 255, 0.2);
+    /* Enable pinch-to-zoom on touch devices */
+    touch-action: pinch-zoom;
+    -ms-touch-action: pinch-zoom;
 }
 
 /* Add overlay for better visibility of territory nodes */
@@ -1519,6 +1709,9 @@ p {
         repeating-linear-gradient(0deg, rgba(0, 255, 255, 0.1), rgba(0, 255, 255, 0.1) 1px, transparent 1px, transparent 30px),
         repeating-linear-gradient(90deg, rgba(0, 255, 255, 0.1), rgba(0, 255, 255, 0.1) 1px, transparent 1px, transparent 30px);
     box-shadow: inset 0 0 50px rgba(0, 255, 255, 0.2);
+    /* Enable pinch-to-zoom on touch devices */
+    touch-action: pinch-zoom;
+    -ms-touch-action: pinch-zoom;
 }
 
 .tech-info-panel {
@@ -1675,4 +1868,59 @@ p {
     opacity: 0.9;
     box-shadow: 0 0 12px rgba(0, 255, 0, 0.5);
     height: 5px;
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+    body {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+    
+    .container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Mobile Floating Action Buttons */
+.mobile-fab {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    text-align: center;
+    line-height: 60px;
+    font-size: 24px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mobile-fab:active {
+    transform: scale(0.95);
+}
+
+.mobile-fab.info {
+    bottom: 90px;
+    background-color: var(--secondary-color);
+}
+
+@media (max-width: 768px) {
+    .mobile-fab {
+        display: block;
+    }
 }
