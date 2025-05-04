@@ -1,0 +1,37 @@
+{
+  "factions": ["ShillZ", "Muskers", "Cryptids", "MechRebels", "Hackers", "GigaCorp"],
+  "factionWeights": {
+    "ShillZ": 100,
+    "Muskers": 80,
+    "Cryptids": 70,
+    "MechRebels": 40,
+    "Hackers": 50,
+    "GigaCorp": 90
+  },
+  "diplomacyRules": {
+    "GigaCorp": {
+      "ally_choices": ["ShillZ", "Cryptids", "Muskers"],
+      "rival_choices": ["MechRebels", "Hackers"]
+    },
+    "Muskers": {
+      "ally_choices": ["GigaCorp", "ShillZ"],
+      "rival_choices": ["Hackers", "MechRebels"]
+    },
+    "Cryptids": {
+      "ally_choices": ["GigaCorp", "ShillZ"],
+      "rival_choices": ["Hackers", "MechRebels"]
+    },
+    "ShillZ": {
+      "ally_choices": ["GigaCorp", "Muskers", "Cryptids"],
+      "rival_choices": ["Hackers", "MechRebels"]
+    },
+    "Hackers": {
+      "ally_choices": ["MechRebels"],
+      "rival_choices": ["GigaCorp", "ShillZ", "Muskers", "Cryptids"]
+    },
+    "MechRebels": {
+      "ally_choices": ["Hackers"],
+      "rival_choices": ["GigaCorp", "ShillZ", "Muskers", "Cryptids"]
+    }
+  }
+} 

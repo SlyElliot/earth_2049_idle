@@ -1,0 +1,26 @@
+{
+  "districts": [
+    "Tech District", 
+    "Downtown", 
+    "Harbor Area", 
+    "Living Towers", 
+    "Financial District", 
+    "Government Quarter", 
+    "Underground",
+    "Bot Bay", 
+    "ShillZ Central", 
+    "Abandoned Sector",
+    "Muskers Territory", 
+    "Cryptids Domain", 
+    "MechRebels Stronghold", 
+    "Hackers Den"
+  ],
+  "homeDistricts": {
+    "ShillZ": "ShillZ Central",
+    "Muskers": "Muskers Territory",
+    "Cryptids": "Cryptids Domain",
+    "MechRebels": "MechRebels Stronghold",
+    "Hackers": "Hackers Den",
+    "GigaCorp": "Government Quarter"
+  }
+} 

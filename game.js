@@ -3,24 +3,24 @@
 // Game state (Updated based on GDD)
 let gameState = {
     resources: {
-        credits: 10,
-        followers: 0,
-        influence: 0,
-        techPoints: 0,
-        energy: 0,
-        rebellionStrength: 0,
-        gigaTech: 0,
-        mindControlCounter: 0
+        credits: 0.0,
+        followers: 0.0,
+        influence: 0.0,
+        techPoints: 0.0,
+        energy: 0.0,
+        rebellionStrength: 0.0,
+        gigaTech: 0.0,
+        mindControlCounter: 0.0
     },
     rates: {
-        credits: 0,
-        followers: 0,
-        influence: 0,
-        techPoints: 0,
-        energy: 0,
-        rebellionStrength: 0,
-        gigaTech: 0,
-        mindControlCounter: 0
+        credits: 0.0,
+        followers: 0.0,
+        influence: 0.0,
+        techPoints: 0.0,
+        energy: 0.0,
+        rebellionStrength: 0.0,
+        gigaTech: 0.0,
+        mindControlCounter: 0.0
     },
     turingLevel: 1, // Add Turing AI assistant level
     globalMultipliers: {
@@ -500,6 +500,7 @@ let gameState = {
     },
     settings: {
         soundEnabled: true,
+        musicEnabled: true,
         theme: "dark"
     },
     lastUpdate: Date.now()
@@ -509,30 +510,29 @@ let gameState = {
 
 // Function to load game state from localStorage
 function loadGame() {
-    const savedState = localStorage.getItem("cyberpunkIdleGameSave");
-    if (savedState) {
+    let savedGame = localStorage.getItem("earth2049_saveGame");
+    
+    if (savedGame) {
         try {
-            const parsedState = JSON.parse(savedState);
-            // Basic merge - overwrite defaults with saved values
-            // A more robust merge would handle added/removed properties
-            gameState = deepMerge(gameState, parsedState);
-            addLogMessage("Game loaded successfully.");
-        } catch (e) {
-            console.error("Failed to parse saved state:", e);
-            addLogMessage("Failed to load save game. Starting new game.");
-            localStorage.removeItem("cyberpunkIdleGameSave"); // Clear corrupted save
+            let loadedState = JSON.parse(savedGame);
+            
+            // Merge with default state to handle any missing properties
+            gameState = deepMerge(gameState, loadedState);
+            
+            console.log("Game loaded successfully");
+        } catch (error) {
+            console.error("Error loading game:", error);
+            // Keep the default game state
         }
     }
-    // Ensure essential structures exist after load
-    gameState.resources = gameState.resources || {};
-    gameState.rates = gameState.rates || {};
-    gameState.baseProductionBoosts = gameState.baseProductionBoosts || {};
-    gameState.items = gameState.items || {};
-    gameState.techTree = gameState.techTree || {};
-    gameState.territories = gameState.territories || {};
-    gameState.progression = gameState.progression || { unlockedTabs: ["boosts-tab"], achievements: {} };
-    gameState.settings = gameState.settings || { soundEnabled: true, theme: "dark" };
-    gameState.lastUpdate = gameState.lastUpdate || Date.now();
+    
+    // Ensure settings are properly initialized
+    gameState.settings = gameState.settings || { soundEnabled: true, musicEnabled: true, theme: "dark" };
+    if (gameState.settings.musicEnabled === undefined) {
+        gameState.settings.musicEnabled = true;
+    }
+    
+    // Additional initialization...
 }
 
 // Deep merge utility (simple version)
@@ -552,7 +552,7 @@ function deepMerge(target, source) {
 // Function to save game state to localStorage
 function saveGame() {
     try {
-        localStorage.setItem("cyberpunkIdleGameSave", JSON.stringify(gameState));
+        localStorage.setItem("earth2049_saveGame", JSON.stringify(gameState));
         // addLogMessage("Game saved successfully."); // Reduce log spam
     } catch (e) {
         console.error("Failed to save game state:", e);
@@ -562,37 +562,104 @@ function saveGame() {
 
 // Function to initialize the game
 document.addEventListener("DOMContentLoaded", function initGame() {
+    // Load or initialize game state
     loadGame();
-    initProgressionSystem(); // Initialize progression system
-    updateResourceDisplay();
-    updateAllDisplays(); // Initial display update for all tabs
-    setInterval(gameLoop, 1000); // Main game loop runs every second
-    setInterval(saveGame, 15000); // Autosave every 15 seconds
-
-    // Add event listener for dev console
-    const devConsoleInput = document.getElementById("dev-console-input");
-    if (devConsoleInput) {
-        devConsoleInput.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                handleDevCommand(devConsoleInput.value);
-                devConsoleInput.value = ""; // Clear input after command
-            }
+    
+    // Initialize background music
+    initBackgroundMusic();
+    
+    // Set up click handlers for game operations
+    document.querySelectorAll(".operation-button").forEach(button => {
+        button.addEventListener("click", function() {
+            // Add animations or effects here
         });
-    }
-
-    // Handle mobile touch events for tech tree and map
+    });
+    
+    // Set up mobile touch handling
     setupMobileTouchHandling();
-
-    // Set initial active tab
-    if (gameState.progression.unlockedTabs && gameState.progression.unlockedTabs.length > 0) {
-        switchTab(gameState.progression.unlockedTabs[0]);
-    } else {
-        switchTab("boosts-tab"); // Default to boosts if none saved
-    }
-
-    console.log("Game initialized successfully.");
-    addLogMessage("Welcome to Earth 2039. Initiate operations.");
+    
+    // Initial display updates
+    updateResourceDisplay();
+    updateBoostsDisplay();
+    updateItemsDisplay();
+    updateTechTreeDisplay();
+    updateTerritoriesDisplay();
+    updateMissionsDisplay();
+    updateAllDisplays();
+    
+    // Update tech button cost
+    document.getElementById("techPoints-cost").textContent = 5;
+    
+    // Add initial log message
+    addLogMessage("Welcome to Earth 2049, where your rebellion begins.");
+    
+    // Start game loop
+    gameLoop();
 });
+
+// Initialize background music system
+function initBackgroundMusic() {
+    const musicElement = document.getElementById("background-music");
+    const musicToggle = document.getElementById("music-toggle");
+    
+    // Set initial state from game settings
+    if (gameState.settings && gameState.settings.musicEnabled === false) {
+        musicElement.pause();
+        musicToggle.textContent = "🔇";
+        musicToggle.classList.add("muted");
+    } else {
+        // Default to enabled
+        gameState.settings = gameState.settings || {};
+        gameState.settings.musicEnabled = true;
+        
+        // Start playing with a slight delay to ensure proper loading
+        setTimeout(() => {
+            try {
+                musicElement.volume = 0.3; // Set default volume to 30%
+                musicElement.play().catch(error => {
+                    console.error("Failed to autoplay music:", error);
+                    // Many browsers require user interaction before audio can play
+                    // We'll leave the music enabled so it will play once the user clicks
+                });
+            } catch (error) {
+                console.error("Music initialization error:", error);
+            }
+        }, 1000);
+    }
+    
+    // Add click handler for the music toggle button
+    musicToggle.addEventListener("click", function() {
+        toggleBackgroundMusic();
+    });
+}
+
+// Toggle background music on/off
+function toggleBackgroundMusic() {
+    const musicElement = document.getElementById("background-music");
+    const musicToggle = document.getElementById("music-toggle");
+    
+    // Update game state setting
+    gameState.settings.musicEnabled = !gameState.settings.musicEnabled;
+    
+    if (gameState.settings.musicEnabled) {
+        // Turn music on
+        musicElement.play().catch(error => {
+            console.error("Failed to play music:", error);
+        });
+        musicToggle.textContent = "🔊";
+        musicToggle.classList.remove("muted");
+        addLogMessage("Background music enabled.");
+    } else {
+        // Turn music off
+        musicElement.pause();
+        musicToggle.textContent = "🔇";
+        musicToggle.classList.add("muted");
+        addLogMessage("Background music disabled.");
+    }
+    
+    // Save settings
+    saveGame();
+}
 
 // Setup mobile touch handling for tech tree and territories
 function setupMobileTouchHandling() {
@@ -1904,6 +1971,19 @@ function updateTerritoriesDisplay() {
             territoryElement.classList.add(prereqsMet ? "unlockable" : "locked");
         }
         
+        // Add class based on faction ownership and relationship
+        if (territory.owner) {
+            if (territory.owner === "Player") {
+                territoryElement.classList.add("player-controlled");
+            } else if (gameState.factionStanding && gameState.factionStanding[territory.owner] > 0) {
+                territoryElement.classList.add("ally-controlled");
+            } else if (gameState.factionStanding && gameState.factionStanding[territory.owner] < 0) {
+                territoryElement.classList.add("enemy-controlled");
+            } else {
+                territoryElement.classList.add("neutral-controlled");
+            }
+        }
+        
         // Position element
         territoryElement.style.left = `${position.x}%`;
         territoryElement.style.top = `${position.y}%`;
@@ -1994,6 +2074,29 @@ function updateTerritoryInfoPanel(territoryId) {
         
         statusValueElement.textContent = statusText;
         statusValueElement.className = statusClass;
+    }
+    
+    // Add faction ownership information
+    const factionControlElement = document.getElementById("territory-control");
+    if (factionControlElement) {
+        if (territory.owner) {
+            // Determine relationship with the owner faction
+            let relationshipClass = "";
+            
+            if (territory.owner === "Player") {
+                relationshipClass = "player-controlled";
+            } else if (gameState.factionStanding && gameState.factionStanding[territory.owner] > 0) {
+                relationshipClass = "ally-controlled";
+            } else if (gameState.factionStanding && gameState.factionStanding[territory.owner] < 0) {
+                relationshipClass = "enemy-controlled";
+            } else {
+                relationshipClass = "neutral-controlled";
+            }
+            
+            factionControlElement.innerHTML = `<span class="${relationshipClass}">Controlled by: ${territory.owner}</span>`;
+        } else {
+            factionControlElement.innerHTML = "Uncontrolled";
+        }
     }
     
     // Update effects
@@ -2158,6 +2261,18 @@ function gameLoop() {
     // Calculate rebellion strength from other resources
     updateRebellionStrength();
 
+    // Run the AI Director if it exists
+    if (window.aiDirector && typeof window.aiDirector.tick === 'function') {
+        window.aiDirector.tick(gameState);
+        
+        // Update AI Director debug panel if visible
+        const directorDebugPanel = document.getElementById('ai-director-debug');
+        if (directorDebugPanel && directorDebugPanel.style.display === 'block' && 
+            window.aiDirector.updateDebugPanel) {
+            window.aiDirector.updateDebugPanel();
+        }
+    }
+
     // Update UI
     updateResourceDisplay(); // Refresh all displays
 
@@ -2244,7 +2359,10 @@ function handleDevCommand(commandString) {
     } else if (command === "help") {
          addLogMessage("DEV Commands:");
          addLogMessage("  add <resource> <amount> - Add resources");
-         addLogMessage("  turing <dialogue> - Show Turing dialogue (options: introduction, rebellion_growing, etc.)");
+         addLogMessage("  set <resource> <amount> - Set resource value");
+         addLogMessage("  unlock <type> - Unlock items (alltech, allterritories)");
+         addLogMessage("  reset save - Clear save data");
+         addLogMessage("  debug director - Show AI Director debug panel");
     } else {
         addLogMessage(`DEV Error: Invalid command format. Use 'help' for available commands.`);
     }

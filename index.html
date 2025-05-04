@@ -16,7 +16,16 @@
         <div class="game-header">
             <h1>Earth 2049</h1>
             <p>Lead the rebellion against GigaCorp</p> <!-- Updated Subtitle -->
+            <div class="audio-controls">
+                <button id="music-toggle" class="audio-button" title="Toggle Music">🔊</button>
+            </div>
         </div>
+        
+        <!-- Hidden audio element for background music -->
+        <audio id="background-music" loop>
+            <source src="music_and_stings/main_theme_loop.wav" type="audio/wav">
+            Your browser does not support the audio element.
+        </audio>
         
         <div class="game-content">
             <!-- Resources Panel (Updated for GDD) -->
@@ -88,6 +97,8 @@
                     <button class="tab" data-tab="techTree-tab" onclick="switchTab('techTree-tab')">Tech Tree</button> <!-- Renamed -->
                     <button class="tab" data-tab="territories-tab" onclick="switchTab('territories-tab')">Territories</button> <!-- Renamed -->
                     <button class="tab" data-tab="missions-tab" onclick="switchTab('missions-tab')">Missions</button> <!-- Renamed -->
+                    <button class="tab" data-tab="factions-tab" onclick="switchTab('factions-tab')">Factions</button> <!-- New Factions Tab -->
+                    <button class="tab" data-tab="randomizer-tab" onclick="switchTab('randomizer-tab')">Randomizer</button>
                 </div>
                 
                 <!-- Boosts Tab (Was Upgrades) -->
@@ -179,6 +190,11 @@
                                     <span id="territory-status-value">Locked</span>
                                 </div>
                                 
+                                <div class="territory-control">
+                                    <h4>Control:</h4>
+                                    <p id="territory-control">Uncontrolled</p>
+                                </div>
+                                
                                 <div id="territory-effects">
                                     <h4>Effects:</h4>
                                     <p id="territory-effects-text">No effects</p>
@@ -209,6 +225,20 @@
                         <!-- Missions will be dynamically added here -->
                     </div>
                 </div>
+                
+                <!-- Factions Tab -->
+                <div id="factions-tab" class="tab-content">
+                    <h2>Factions</h2>
+                    <p>View faction standings and perform diplomatic actions.</p>
+                    <div id="faction-interface-container" class="faction-interface-container">
+                        <!-- Faction interface will be dynamically added here -->
+                    </div>
+                </div>
+                
+                <!-- Randomizer Tab -->
+                <div class="tab-content" id="randomizer-tab">
+                    <!-- Randomizer content will be added by the randomizer script -->
+                </div>
             </div>
             
             <!-- Log Panel -->
@@ -221,6 +251,20 @@
                 </div>
                 <input type="text" id="dev-console-input" class="dev-console-input" placeholder="Enter dev command...">
             </div>
+            
+            <!-- AI Director Debug Panel -->
+            <div id="ai-director-debug" class="debug-panel">
+                <div class="debug-header">
+                    <h2>Turing AI Director Debug</h2>
+                    <button id="refresh-director-debug" class="debug-refresh-button">Refresh</button>
+                </div>
+                <div id="director-debug-container" class="debug-container">
+                    <!-- AI Director debug data will be displayed here -->
+                </div>
+            </div>
+            
+            <!-- Toggle Debug Button -->
+            <button id="toggle-director-debug" class="debug-toggle-button">Toggle AI Director Debug</button>
             
             <!-- Achievements Button -->
             <button class="achievements-button" onclick="toggleAchievements()">Achievements</button>
@@ -273,6 +317,13 @@
     <script src="game.js"></script>
     <script src="progression.js"></script>
     <script src="visual-effects.js"></script>
+    <script src="ai_director.js"></script>
+    <script src="turing_director_dialogues.js"></script>
+    <script src="faction_interface.js"></script>
+    <script src="faction_interface_trigger.js"></script>
+    <script src="mission_dialogues.js"></script>
+    <script src="ai_director_debug.js"></script>
+    <script src="run_seed_randomizer.js"></script>
 </body>
 </html>
 

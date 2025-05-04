@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earth 2049 - Faction Interface Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: #f0f0f0;
+        }
+        
+        header {
+            background-color: #222;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            margin: 0;
+            color: #00AAFF;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 1rem;
+        }
+        
+        .info-panel {
+            background-color: #222;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        
+        .resources {
+            display: flex;
+            justify-content: space-between;
+            background-color: #333;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        
+        .resource {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .resource-value {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #00CCFF;
+        }
+        
+        .resource-label {
+            font-size: 0.8rem;
+            color: #CCC;
+        }
+        
+        /* Styles for faction interface container */
+        #faction-interface-container {
+            background-color: #222;
+            border-radius: 4px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            margin: 2rem auto;
+            position: relative;
+        }
+        
+        /* Instructions */
+        .instructions {
+            background-color: #333;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 2rem;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #00AAFF;
+        }
+        
+        .instructions ul {
+            padding-left: 1.5rem;
+        }
+        
+        .instructions li {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Button for manual testing */
+        .manual-button {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+        
+        .manual-button:hover {
+            background-color: #444;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Earth 2049 - Faction Interface Demo</h1>
+    </header>
+    
+    <div class="demo-container">
+        <div class="info-panel">
+            <h2>Game State</h2>
+            <p>This is a demo of the faction interface system for Earth 2049 Idle.</p>
+            
+            <div class="resources">
+                <div class="resource">
+                    <div class="resource-value">5,000</div>
+                    <div class="resource-label">Credits</div>
+                </div>
+                <div class="resource">
+                    <div class="resource-value">2,000</div>
+                    <div class="resource-label">Energy</div>
+                </div>
+                <div class="resource">
+                    <div class="resource-value">3,000</div>
+                    <div class="resource-label">Tech Points</div>
+                </div>
+                <div class="resource">
+                    <div class="resource-value">1,500</div>
+                    <div class="resource-label">Followers</div>
+                </div>
+            </div>
+            
+            <button id="manual-faction-button" class="manual-button">Open Faction Interface (Manual)</button>
+        </div>
+        
+        <div class="instructions">
+            <h3>Instructions</h3>
+            <ul>
+                <li>Click the "Factions" button in the top-right corner to open the faction interface</li>
+                <li>Or use the manual button above if the auto-generated button doesn't appear</li>
+                <li>View faction standings, allies, enemies, and available missions</li>
+                <li>Interact with factions through diplomatic options</li>
+                <li>Each faction has different dialogue options based on your standing with them</li>
+                <li>Your choices affect your relationships with all factions through the relationship matrix</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- AI Director Script (mock version for demo) -->
+    <script>
+        // Mock AI Director for demo purposes
+        window.aiDirector = {
+            getFactionStanding: function(faction) {
+                // Mock standings for demo
+                const standings = {
+                    "GigaCorp": 60,
+                    "Muskers": 30,
+                    "Cryptids": -20,
+                    "ShillZ": 40,
+                    "Hackers": -50,
+                    "MechRebels": 10
+                };
+                return standings[faction] || 0;
+            },
+            
+            getAllFactionStandings: function() {
+                return {
+                    "GigaCorp": 60,
+                    "Muskers": 30,
+                    "Cryptids": -20,
+                    "ShillZ": 40,
+                    "Hackers": -50,
+                    "MechRebels": 10
+                };
+            },
+            
+            getAvailableMissions: function() {
+                return [
+                    {
+                        id: "M-001",
+                        name: "Dumpster-Dive Data",
+                        faction: "Hackers",
+                        contact: "ZeroCool",
+                        dialogueTree: {
+                            npcLine: "Trash is truth, choom. Wanna rummage?",
+                            options: [
+                                { text: "Point me to the bins." },
+                                { text: "Pay first." },
+                                { text: "Hard pass." }
+                            ]
+                        }
+                    },
+                    {
+                        id: "M-003",
+                        name: "Broadcast Graffiti",
+                        faction: "ShillZ",
+                        contact: "Riya Vex",
+                        dialogueTree: {
+                            npcLine: "Paint the streets or stay obsolete.",
+                            options: [
+                                { text: "A little color never hurts." },
+                                { text: "Looks like astroturf." },
+                                { text: "No thanks." }
+                            ]
+                        }
+                    },
+                    {
+                        id: "M-005",
+                        name: "Musk Clinic Recon",
+                        faction: "Muskers",
+                        contact: "Magnus",
+                        dialogueTree: {
+                            npcLine: "Tour the showroom – real *subdermals*, real ROI.",
+                            options: [
+                                { text: "Let's augment." },
+                                { text: "I'll pass on the abs." }
+                            ]
+                        }
+                    }
+                ];
+            },
+            
+            applyReputationChange: function(faction, delta, gameState) {
+                console.log(`AI Director: Applying ${delta} reputation change to ${faction}`);
+                // This would be implemented in the real game
+            }
+        };
+    </script>
+    
+    <!-- Load the faction interface scripts -->
+    <script src="faction_interface.js"></script>
+    <script src="faction_interface_trigger.js"></script>
+    
+    <!-- Manual trigger for testing -->
+    <script>
+        document.getElementById('manual-faction-button').addEventListener('click', function() {
+            const gameState = {
+                resources: {
+                    credits: 5000,
+                    energy: 2000,
+                    techPoints: 3000,
+                    followers: 1500
+                },
+                territories: {
+                    "Downtown": { controlled: true, playerSectors: 3, playerPercent: 60 },
+                    "Tech District": { controlled: false, playerSectors: 1, playerPercent: 20 },
+                    "Harbor": { controlled: false, playerSectors: 0, playerPercent: 0 }
+                }
+            };
+            
+            if (window.factionInterface) {
+                window.factionInterface.show(gameState);
+            } else {
+                alert("Faction interface not loaded!");
+            }
+        });
+    </script>
+</body>
+</html> 
