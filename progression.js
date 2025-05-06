@@ -560,3 +560,16 @@ function enhanceResetAfterAttack() {
     };
 }
 
+// Expose progression functions to window object
+window.initProgressionSystem = initProgressionSystem;
+window.checkProgressionTriggers = checkProgressionTriggers;
+window.unlockAchievement = unlockAchievement;
+window.updateAchievementsDisplay = updateAchievementsDisplay;
+window.toggleAchievements = toggleAchievements;
+
+// Initialize progression system on DOM ready
+document.addEventListener("DOMContentLoaded", function() {
+    console.log("Starting progression system...");
+    setTimeout(initProgressionSystem, 500); // Short delay to ensure game state is ready
+});
+

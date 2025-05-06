@@ -23,6 +23,7 @@ let gameState = {
         mindControlCounter: 0.0
     },
     turingLevel: 1, // Add Turing AI assistant level
+    clickMultiplier: 1, // Multiplier for click actions (1x, 5x, 10x, 100x, MAX)
     globalMultipliers: {
         creditsRateBonus: 1.0,
         followersRateBonus: 1.0,
@@ -562,39 +563,73 @@ function saveGame() {
 
 // Function to initialize the game
 document.addEventListener("DOMContentLoaded", function initGame() {
-    // Load or initialize game state
-    loadGame();
+    console.log("Initializing Earth 2049 game...");
     
-    // Initialize background music
-    initBackgroundMusic();
-    
-    // Set up click handlers for game operations
-    document.querySelectorAll(".operation-button").forEach(button => {
-        button.addEventListener("click", function() {
-            // Add animations or effects here
+    try {
+        // Load or initialize game state
+        loadGame();
+        
+        // Ensure core properties are initialized
+        gameState.lastUpdate = gameState.lastUpdate || Date.now();
+        gameState.settings = gameState.settings || { soundEnabled: true, musicEnabled: true, theme: "dark" };
+        gameState.progression = gameState.progression || { unlockedTabs: ["boosts-tab"], achievements: {} };
+        
+        // Initialize background music
+        initBackgroundMusic();
+        
+        // Set up click handlers for game operations
+        document.querySelectorAll(".operation-button").forEach(button => {
+            button.addEventListener("click", function() {
+                // Add animations or effects here
+            });
         });
-    });
-    
-    // Set up mobile touch handling
-    setupMobileTouchHandling();
-    
-    // Initial display updates
-    updateResourceDisplay();
-    updateBoostsDisplay();
-    updateItemsDisplay();
-    updateTechTreeDisplay();
-    updateTerritoriesDisplay();
-    updateMissionsDisplay();
-    updateAllDisplays();
-    
-    // Update tech button cost
-    document.getElementById("techPoints-cost").textContent = 5;
-    
-    // Add initial log message
-    addLogMessage("Welcome to Earth 2049, where your rebellion begins.");
-    
-    // Start game loop
-    gameLoop();
+        
+        // Set up mobile touch handling
+        setupMobileTouchHandling();
+        
+        // Set up dialogue box event listeners
+        const dialogueNext = document.getElementById("dialogue-next");
+        if (dialogueNext) {
+            dialogueNext.addEventListener("click", nextDialogue);
+        }
+        
+        // Initial display updates
+        updateResourceDisplay();
+        updateBoostsDisplay();
+        updateItemsDisplay();
+        updateTechTreeDisplay();
+        updateTerritoriesDisplay();
+        updateMissionsDisplay();
+        updateAllDisplays();
+        
+        // Update tech button cost
+        const techPointsCost = document.getElementById("techPoints-cost");
+        if (techPointsCost) {
+            techPointsCost.textContent = 5;
+        }
+        
+        // Add initial log message
+        addLogMessage("Welcome to Earth 2049, where your rebellion begins.");
+        
+        // Preload dialogue assets
+        preloadDialogueAssets();
+        
+        // Register key event handlers
+        document.addEventListener("keydown", function(e) {
+            // Escape key closes dialogues and modals
+            if (e.key === "Escape") {
+                closeDialogue();
+                closeModal();
+            }
+        });
+        
+        // Start game loop with a short delay to ensure DOM is ready
+        setTimeout(gameLoop, 100);
+        
+        console.log("Game initialization complete!");
+    } catch (error) {
+        console.error("Error during game initialization:", error);
+    }
 });
 
 // Initialize background music system
@@ -883,27 +918,88 @@ function mineCredits() {
 }
 
 function collectTechPoints() {
-    const cost = 5; // Cost in credits
+    const baseCost = 5; // Base cost in credits
+    let cost, amount;
+    
+    // Handle MAX multiplier
+    if (gameState.clickMultiplier === "MAX") {
+        // Calculate maximum possible amount based on available credits
+        amount = Math.floor(gameState.resources.credits / baseCost);
+        cost = amount * baseCost;
+        
+        if (amount <= 0) {
+            addLogMessage("Insufficient credits to collect Tech Points.");
+            return;
+        }
+    } else {
+        // Normal multiplier
+        cost = baseCost * gameState.clickMultiplier;
+        amount = gameState.clickMultiplier;
+    }
+    
     if (gameState.resources.credits >= cost) {
         playSound("sounds/click.wav"); // Play click sound
         gameState.resources.credits -= cost;
-        gameState.resources.techPoints += 1;
+        gameState.resources.techPoints += amount;
         updateResourceDisplay(); // Update UI immediately
     } else {
-        addLogMessage("Insufficient credits to collect Tech Points.");
+        addLogMessage(`Insufficient credits to collect Tech Points. Need ${cost} credits.`);
     }
 }
 
 function generateEnergy() {
-    const cost = 10; // Cost in credits
+    const baseCost = 10; // Base cost in credits
+    let cost, amount;
+    
+    // Handle MAX multiplier
+    if (gameState.clickMultiplier === "MAX") {
+        // Calculate maximum possible amount based on available credits
+        amount = Math.floor(gameState.resources.credits / baseCost);
+        cost = amount * baseCost;
+        
+        if (amount <= 0) {
+            addLogMessage("Insufficient credits to generate Energy.");
+            return;
+        }
+    } else {
+        // Normal multiplier
+        cost = baseCost * gameState.clickMultiplier;
+        amount = gameState.clickMultiplier;
+    }
+    
     if (gameState.resources.credits >= cost) {
         playSound("sounds/click.wav"); // Play click sound
         gameState.resources.credits -= cost;
-        gameState.resources.energy += 1;
+        gameState.resources.energy += amount;
         updateResourceDisplay(); // Update UI immediately
     } else {
-        addLogMessage("Insufficient credits to generate Energy.");
+        addLogMessage(`Insufficient credits to generate Energy. Need ${cost} credits.`);
     }
+}
+
+function cycleClickMultiplier() {
+    // Cycle through multiplier values: 1 -> 5 -> 10 -> 100 -> MAX -> 1
+    const multipliers = [1, 5, 10, 100, "MAX"];
+    
+    // Find current position in the cycle
+    let currentIndex = -1;
+    if (gameState.clickMultiplier === "MAX") {
+        currentIndex = multipliers.indexOf("MAX");
+    } else {
+        currentIndex = multipliers.indexOf(gameState.clickMultiplier);
+    }
+    
+    // Move to next multiplier
+    const nextIndex = (currentIndex + 1) % multipliers.length;
+    gameState.clickMultiplier = multipliers[nextIndex];
+    
+    // Update button text
+    const clickMultiplierButton = document.getElementById("click-multiplier-button");
+    if (clickMultiplierButton) {
+        clickMultiplierButton.textContent = `Clicks: ${gameState.clickMultiplier}x`;
+    }
+    
+    playSound("sounds/click.wav"); // Play click sound
 }
 
 function upgradeTuring() {
@@ -972,32 +1068,84 @@ function calculateCost(baseCost, multiplier, level) {
 }
 
 function buyBoost(boostId) {
+    console.log(`Attempting to buy boost: ${boostId}`);
+    
+    // Validate boost exists
     const boost = gameState.baseProductionBoosts[boostId];
-    if (!boost) return;
-
+    if (!boost) {
+        console.error(`Boost ${boostId} not found!`);
+        return;
+    }
+    
+    // Check if it's unlocked
+    if (!boost.unlocked) {
+        console.error(`Boost ${boostId} is not unlocked yet!`);
+        addLogMessage(`You need to unlock ${boost.name} first through research.`);
+        return;
+    }
+    
+    // Calculate costs with safeguards
     const cost = {};
     let canAfford = true;
-    for (const resource in boost.baseCost) {
-        const currentCost = boost.baseCost[resource] * Math.pow(boost.costMultiplier, boost.level);
-        cost[resource] = currentCost;
-        if (gameState.resources[resource] < currentCost) {
-            canAfford = false;
-            break;
+    let costString = "";
+    
+    try {
+        // Ensure level is a valid number
+        const level = boost.level || 0;
+        const costMultiplier = boost.costMultiplier || 1.15;
+        
+        // Calculate cost for each resource
+        for (const resource in boost.baseCost) {
+            // Safety check for resources
+            if (!gameState.resources.hasOwnProperty(resource)) {
+                console.error(`Resource ${resource} not found in game state!`);
+                continue;
+            }
+            
+            const baseAmount = boost.baseCost[resource] || 0;
+            const currentCost = Math.floor(baseAmount * Math.pow(costMultiplier, level));
+            cost[resource] = currentCost;
+            costString += `${formatNumber(currentCost)} ${resource}, `;
+            
+            if (gameState.resources[resource] < currentCost) {
+                canAfford = false;
+            }
         }
+        costString = costString.slice(0, -2); // Remove trailing comma and space
+    } catch (error) {
+        console.error(`Error calculating boost cost for ${boostId}:`, error);
+        addLogMessage("An error occurred while calculating upgrade cost.");
+        return;
     }
 
+    // Process purchase
     if (canAfford) {
-        playSound("sounds/click.wav"); // Play click sound
-        for (const resource in cost) {
-            gameState.resources[resource] -= cost[resource];
+        try {
+            playSound("sounds/click.wav"); // Play click sound
+            
+            // Deduct resources
+            for (const resource in cost) {
+                gameState.resources[resource] -= cost[resource];
+            }
+            
+            // Increment level
+            boost.level = (boost.level || 0) + 1;
+            
+            // Log success
+            addLogMessage(`${boost.name} upgraded to Level ${boost.level}.`);
+            console.log(`Successfully upgraded ${boostId} to level ${boost.level}`);
+            
+            // Update game state
+            updateRates();
+            updateResourceDisplay();
+            updateBoostsDisplay(); // Refresh boost display
+            saveGame(); // Save progress after significant purchase
+        } catch (error) {
+            console.error(`Error processing boost purchase for ${boostId}:`, error);
+            addLogMessage("An error occurred while upgrading. Please try again.");
         }
-        boost.level++;
-        addLogMessage(`${boost.name} upgraded to Level ${boost.level}.`);
-        updateRates();
-        updateResourceDisplay();
-        updateBoostsDisplay(); // Refresh boost display
     } else {
-        addLogMessage(`Insufficient resources to upgrade ${boost.name}.`);
+        addLogMessage(`Insufficient resources to upgrade ${boost.name}. Requires: ${costString}`);
     }
 }
 
@@ -1242,15 +1390,41 @@ function toggleAchievements() {
 
 // Function to add log messages
 function addLogMessage(message) {
-    const logContainer = document.getElementById("log-container");
-    if (logContainer) {
+    // Validate inputs
+    if (!message || typeof message !== 'string') {
+        console.error("Invalid log message", message);
+        return;
+    }
+
+    try {
+        const logContainer = document.getElementById("log-container");
+        if (!logContainer) {
+            console.error("Log container not found");
+            return;
+        }
+        
+        // Create timestamp
+        const timestamp = new Date();
+        const timeString = `${timestamp.getHours().toString().padStart(2, '0')}:${timestamp.getMinutes().toString().padStart(2, '0')}:${timestamp.getSeconds().toString().padStart(2, '0')}`;
+        
+        // Create log entry
         const logEntry = document.createElement("div");
-        logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logEntry.className = "log-entry";
+        logEntry.innerHTML = `<span class="log-time">[${timeString}]</span> ${message}`;
+        
+        // Add to container and scroll to bottom
         logContainer.appendChild(logEntry);
-        // Auto-scroll to bottom
         logContainer.scrollTop = logContainer.scrollHeight;
-    } else {
-        console.error("DEBUG: log-container not found!"); // ADDED
+        
+        // Limit log size (keep latest 100 entries)
+        while (logContainer.children.length > 100) {
+            logContainer.removeChild(logContainer.firstChild);
+        }
+        
+        // Also output to console for debugging
+        console.log(`[LOG] ${message}`);
+    } catch (error) {
+        console.error("Error adding log message:", error);
     }
 }
 
@@ -2226,17 +2400,34 @@ function updateAchievementsDisplay() {
     }
 }
 
-// Function to update all displays
+// Function to update all display elements in the game
 function updateAllDisplays() {
-    console.log("DEBUG: updateAllDisplays called.");
-    updateResourceDisplay();
-    updateBoostsDisplay();
-    updateItemsDisplay();
-    updateTechTreeDisplay();
-    updateTerritoriesDisplay();
-    updateMissionsDisplay(); // Ensure this line is present
-    updateAchievementsDisplay();
-    updatePrestigeButton();
+    console.log("Updating all displays...");
+    try {
+        // Update all resources and displays
+        updateResourceDisplay();
+        updateBoostsDisplay();
+        updateItemsDisplay();
+        updateTechTreeDisplay();
+        updateTerritoriesDisplay();
+        updateMissionsDisplay();
+        updateAchievementsDisplay();
+        updatePrestigeButton();
+        updateClickMultiplierDisplay();
+        updateButtonStates();
+        
+        console.log("All displays updated successfully");
+    } catch (error) {
+        console.error("Error updating displays:", error);
+    }
+}
+
+// Function to update the click multiplier button display
+function updateClickMultiplierDisplay() {
+    const clickMultiplierButton = document.getElementById("click-multiplier-button");
+    if (clickMultiplierButton) {
+        clickMultiplierButton.textContent = `Clicks: ${gameState.clickMultiplier}x`;
+    }
 }
 
 // --- Game Loop and Saving ---
@@ -2261,6 +2452,26 @@ function gameLoop() {
     // Calculate rebellion strength from other resources
     updateRebellionStrength();
 
+    // Check for mission completion (Ensure this block is present)
+    if (gameState.missions && gameState.missions.activeMission && gameState.missions.missionStartTime) {
+        const mission = gameState.missions.availableMissions[gameState.missions.activeMission];
+        if (mission) { // Check if mission exists before accessing duration
+            const elapsedTime = (now - gameState.missions.missionStartTime) / 1000;
+            if (elapsedTime >= mission.duration) {
+                completeMission(gameState.missions.activeMission);
+            } else {
+                // Update mission progress display less frequently if performance is an issue
+                if (Date.now() % 1000 < 100) { // Update roughly once per second
+                    updateMissionsDisplay();
+                }
+            }
+        } else {
+            console.error(`Invalid active mission ID: ${gameState.missions.activeMission}`);
+            gameState.missions.activeMission = null;
+            gameState.missions.missionStartTime = null;
+        }
+    }
+
     // Run the AI Director if it exists
     if (window.aiDirector && typeof window.aiDirector.tick === 'function') {
         window.aiDirector.tick(gameState);
@@ -2274,12 +2485,27 @@ function gameLoop() {
     }
 
     // Update UI
-    updateResourceDisplay(); // Refresh all displays
+    updateResourceDisplay(); // Refresh basic resources
+    updateButtonStates(); // Update button disabled states
 
     // Check for progression triggers
-    checkProgressionTriggers();
+    if (typeof checkProgressionTriggers === 'function') {
+        try {
+            checkProgressionTriggers();
+        } catch (error) {
+            console.warn("Error in progression system:", error);
+        }
+    }
+
+    // Call save game periodically (every 30 seconds)
+    if (now % 30000 < 1000) {
+        saveGame();
+    }
 
     gameState.lastUpdate = now;
+    
+    // Request next animation frame
+    setTimeout(gameLoop, 1000); // Run approximately every second
 }
 
 // Calculate rebellion strength based on other resources
@@ -2380,6 +2606,7 @@ window.activateTerritory = activateTerritory;
 window.switchTab = switchTab;
 window.toggleAchievements = toggleAchievements;
 window.handleDevCommand = handleDevCommand; // If needed globally, though listener is preferred
+window.cycleClickMultiplier = cycleClickMultiplier;
 
 
 
@@ -2692,64 +2919,8 @@ function updateMissionsDisplay() {
 
 // --- Integrate into existing functions ---
 
-// Modify updateAllDisplays to include missions
-function updateAllDisplays() {
-    console.log("DEBUG: updateAllDisplays called.");
-    updateBoostsDisplay();
-    updateItemsDisplay();
-    updateTechTreeDisplay();
-    updateTerritoriesDisplay();
-    updateMissionsDisplay(); // Ensure this line is present
-    updateAchievementsDisplay();
-    updatePrestigeButton();
-}
-
-// Modify gameLoop to check for mission completion
-function gameLoop() {
-    const now = Date.now();
-    const delta = (now - gameState.lastUpdate) / 1000; // Time difference in seconds
-
-    updateRates(); // Recalculate rates based on current boosts, items, etc.
-
-    // Generate resources
-    for (const resource in gameState.rates) {
-        gameState.resources[resource] += gameState.rates[resource] * delta;
-    }
-
-    // Check for mission completion (Ensure this block is present)
-    if (gameState.missions && gameState.missions.activeMission && gameState.missions.missionStartTime) {
-        const mission = gameState.missions.availableMissions[gameState.missions.activeMission];
-        if (mission) { // Check if mission exists before accessing duration
-            const elapsedTime = (now - gameState.missions.missionStartTime) / 1000;
-            if (elapsedTime >= mission.duration) {
-                completeMission(gameState.missions.activeMission);
-            } else {
-                // Update mission progress display less frequently if performance is an issue
-                 if (Date.now() % 1000 < 100) { // Update roughly once per second
-                     updateMissionsDisplay();
-                 }
-            }
-        } else {
-             console.error(`Invalid active mission ID: ${gameState.missions.activeMission}`);
-             gameState.missions.activeMission = null;
-             gameState.missions.missionStartTime = null;
-        }
-    }
-
-    updateResourceDisplay(); // Update resource values in the UI
-    updateButtonStates(); // Update button disabled states
-    
-    // Add safe check for checkProgressionTriggers function
-    if (typeof checkProgressionTriggers === 'function') {
-        try {
-            checkProgressionTriggers();
-        } catch (error) {
-            console.warn("Error in progression system:", error);
-        }
-    }
-
-    gameState.lastUpdate = now;
-}
+// Using main updateAllDisplays function from line ~2404
+// No duplicate needed here
 
 // Modify or Add updateButtonStates to include missions
 function updateButtonStates() {
@@ -2886,34 +3057,49 @@ function updateButtonStates() {
 
 // --- Modal Functions ---
 function showModal(title, contentHTML) {
-    const modal = document.getElementById("modal");
-    const modalTitle = document.getElementById("modal-title");
-    const modalContent = document.getElementById("modal-content"); // Target the correct content div
-
-    if (modal && modalTitle && modalContent) {
-        modalTitle.textContent = title;
-        modalContent.innerHTML = contentHTML; // Use innerHTML to render HTML content
-        modal.style.display = "flex"; // Use flex instead of block for centering
-    } else {
-        console.error("Modal elements not found!");
+    console.log(`Showing modal: ${title}`);
+    
+    try {
+        const modal = document.getElementById("modal");
+        if (!modal) {
+            console.error("Modal element not found!");
+            return;
+        }
+        
+        // Set title
+        const titleElement = document.getElementById("modal-title");
+        if (titleElement) {
+            titleElement.textContent = title;
+        }
+        
+        // Set content
+        const contentElement = document.getElementById("modal-content");
+        if (contentElement) {
+            contentElement.innerHTML = contentHTML;
+        }
+        
+        // Show modal
+        modal.style.display = "block";
+        
+        // Play sound
+        playSound("sounds/click.wav");
+        
+        console.log("Modal displayed successfully");
+    } catch (error) {
+        console.error("Error showing modal:", error);
     }
 }
-window.showModal = showModal; // Expose globally if needed by progression.js
 
 function closeModal() {
-    const modal = document.getElementById("modal");
-    if (modal) {
-        modal.style.display = "none";
-        // Clear content to prevent old buttons from persisting
-        const modalContent = document.getElementById("modal-content");
-        if (modalContent) {
-            modalContent.innerHTML = "";
+    try {
+        const modal = document.getElementById("modal");
+        if (modal) {
+            modal.style.display = "none";
         }
-    } else {
-        console.error("Modal element not found!");
+    } catch (error) {
+        console.error("Error closing modal:", error);
     }
 }
-window.closeModal = closeModal; // Expose globally for onclick in modal
 
 // --- Other Helper Functions ---
 
@@ -3436,117 +3622,124 @@ let dialogues = {
 
 // Start displaying a dialogue sequence
 function showDialogue(dialogueId) {
-    if (!dialogues[dialogueId]) {
-        console.error(`Dialogue '${dialogueId}' not found!`);
+    console.log(`Attempting to show dialogue: ${dialogueId}`);
+    
+    // Validate dialogue exists
+    if (!dialogues || !dialogues[dialogueId]) {
+        console.error(`Dialogue '${dialogueId}' not found!`, dialogues);
         return;
     }
     
-    // Set current dialogue
-    currentDialogue = dialogueId;
-    currentDialogueStep = 0;
-    
-    // Display first step
-    displayDialogueStep();
-    
-    // Show dialogue box
-    const dialogueBox = document.getElementById("dialogue-box");
-    if (dialogueBox) {
+    try {
+        // Set current dialogue
+        currentDialogue = dialogueId;
+        currentDialogueStep = 0;
+        
+        // Ensure dialogue box exists
+        const dialogueBox = document.getElementById("dialogue-box");
+        if (!dialogueBox) {
+            console.error("Dialogue box element not found!");
+            return;
+        }
+        
+        // Make dialogue box visible
         dialogueBox.style.display = "block";
+        
+        // Display first dialogue step
+        displayDialogueStep();
+        
+        // Play sound effect for dialogue appearance
+        playSound("sounds/click.wav");
+        
+        console.log(`Dialogue ${dialogueId} shown successfully`);
+    } catch (error) {
+        console.error(`Error showing dialogue ${dialogueId}:`, error);
     }
-    
-    // Play sound effect for dialogue appearance
-    playSound("sounds/click.wav");
 }
 
 // Display current dialogue step
 function displayDialogueStep() {
-    if (!currentDialogue || !dialogues[currentDialogue]) return;
-    
-    const dialogue = dialogues[currentDialogue];
-    if (currentDialogueStep >= dialogue.length) {
-        closeDialogue();
-        return;
-    }
-    
-    const step = dialogue[currentDialogueStep];
-    const character = dialogueCharacters[step.character];
-    
-    if (!character) {
-        console.error(`Character '${step.character}' not found!`);
-        return;
-    }
-    
-    // Set character name
-    const nameElement = document.getElementById("dialogue-character-name");
-    if (nameElement) nameElement.textContent = character.name;
-    
-    // Set character portrait
-    const portraitImgElement = document.getElementById("dialogue-portrait-img");
-    const portraitAnimatedElement = document.getElementById("dialogue-portrait-animated");
-    
-    if (portraitImgElement && portraitAnimatedElement) {
-        if (character.hasAnimation) {
-            portraitImgElement.style.display = "none";
-            portraitAnimatedElement.style.display = "block";
-            // If we have a specific animation sprite, set it
-            if (character.animationSprite) {
-                portraitAnimatedElement.style.backgroundImage = `url('${character.animationSprite}')`;
-            }
-        } else {
-            portraitImgElement.style.display = "block";
-            portraitAnimatedElement.style.display = "none";
-            portraitImgElement.src = character.portrait;
-        }
-    }
-    
-    // Set dialogue text with typing effect
-    const textElement = document.getElementById("dialogue-text");
-    if (textElement) {
-        // Clear previous typing interval
-        if (dialogueTypingInterval) {
-            clearInterval(dialogueTypingInterval);
-            dialogueTypingInterval = null;
+    try {
+        if (!currentDialogue || !dialogues[currentDialogue]) {
+            console.error("No current dialogue to display");
+            return;
         }
         
-        // Start typing effect
-        textElement.textContent = "";
-        textElement.classList.add("dialogue-typing");
+        const dialogue = dialogues[currentDialogue];
+        if (currentDialogueStep >= dialogue.length) {
+            closeDialogue();
+            return;
+        }
         
-        const text = step.text;
-        let charIndex = 0;
+        const step = dialogue[currentDialogueStep];
+        if (!step || !step.character) {
+            console.error("Invalid dialogue step", step);
+            return;
+        }
         
-        dialogueTypingInterval = setInterval(() => {
-            if (charIndex < text.length) {
-                textElement.textContent += text.charAt(charIndex);
-                charIndex++;
-                
-                // Play voice sound occasionally
-                if (character.voice && Math.random() < 0.1) {
-                    playSound(character.voice);
-                }
+        const character = dialogueCharacters[step.character];
+        if (!character) {
+            console.error(`Character '${step.character}' not found!`);
+            return;
+        }
+        
+        // Set character name
+        const nameElement = document.getElementById("dialogue-character-name");
+        if (nameElement) nameElement.textContent = character.name;
+        
+        // Set character portrait
+        const portraitImg = document.getElementById("dialogue-portrait-img");
+        const portraitAnimated = document.getElementById("dialogue-portrait-animated");
+        
+        if (portraitImg && portraitAnimated) {
+            if (character.hasAnimation) {
+                portraitImg.style.display = "none";
+                portraitAnimated.style.display = "block";
+                portraitAnimated.style.backgroundImage = `url('${character.animationSprite}')`;
             } else {
-                // Done typing
-                clearInterval(dialogueTypingInterval);
-                dialogueTypingInterval = null;
-                textElement.classList.remove("dialogue-typing");
-                
-                // Update buttons
-                const nextButton = document.getElementById("dialogue-next");
-                if (nextButton) {
-                    if (currentDialogueStep < dialogue.length - 1) {
-                        nextButton.textContent = "Next";
-                    } else {
-                        nextButton.textContent = "Close";
-                    }
-                }
+                portraitImg.style.display = "block";
+                portraitAnimated.style.display = "none";
+                portraitImg.src = character.portrait;
             }
-        }, 30); // Adjust typing speed as needed
-    }
-    
-    // Update next button text
-    const nextButton = document.getElementById("dialogue-next");
-    if (nextButton) {
-        nextButton.textContent = "Skip typing...";
+        }
+        
+        // Set dialogue text with typing effect
+        const textElement = document.getElementById("dialogue-text");
+        if (textElement) {
+            // Clear previous text
+            textElement.textContent = "";
+            textElement.classList.add("dialogue-typing");
+            
+            // Clear previous typing interval
+            if (dialogueTypingInterval) {
+                clearInterval(dialogueTypingInterval);
+            }
+            
+            // Set up typing effect
+            let charIndex = 0;
+            const text = step.text;
+            
+            dialogueTypingInterval = setInterval(() => {
+                if (charIndex < text.length) {
+                    textElement.textContent += text.charAt(charIndex);
+                    charIndex++;
+                    
+                    // Play typing sound occasionally
+                    if (charIndex % 3 === 0 && character.voice) {
+                        const audio = new Audio(character.voice);
+                        audio.volume = 0.05; // Lower volume for typing sounds
+                        audio.play().catch(e => console.error("Error playing typing sound:", e));
+                    }
+                } else {
+                    // Typing complete
+                    clearInterval(dialogueTypingInterval);
+                    dialogueTypingInterval = null;
+                    textElement.classList.remove("dialogue-typing");
+                }
+            }, 30); // Adjust typing speed here
+        }
+    } catch (error) {
+        console.error("Error displaying dialogue step:", error);
     }
 }
 
@@ -3625,6 +3818,8 @@ function preloadDialogueAssets() {
 window.showDialogue = showDialogue;
 window.nextDialogue = nextDialogue;
 window.closeDialogue = closeDialogue;
+window.showModal = showModal;
+window.closeModal = closeModal;
 
 // Add preloadDialogueAssets to initialization
 document.addEventListener("DOMContentLoaded", function() {
@@ -3633,6 +3828,20 @@ document.addEventListener("DOMContentLoaded", function() {
     // Preload dialogue assets
     preloadDialogueAssets();
 });
+
+// Wrapper function to check progression triggers
+function checkProgressionTriggers() {
+    // Call the progression.js version if it exists
+    if (window.checkProgressionTriggers && typeof window.checkProgressionTriggers === 'function') {
+        try {
+            window.checkProgressionTriggers();
+        } catch (error) {
+            console.error("Error checking progression triggers:", error);
+        }
+    } else {
+        console.warn("checkProgressionTriggers not found in window scope");
+    }
+}
 
 
 
