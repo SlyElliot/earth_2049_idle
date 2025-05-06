@@ -24,6 +24,7 @@ let gameState = {
     },
     turingLevel: 1, // Add Turing AI assistant level
     clickMultiplier: 1, // Multiplier for click actions (1x, 5x, 10x, 100x, MAX)
+    loopCount: 0, // Track the number of game loops/runs
     globalMultipliers: {
         creditsRateBonus: 1.0,
         followersRateBonus: 1.0,
@@ -572,7 +573,14 @@ document.addEventListener("DOMContentLoaded", function initGame() {
         // Ensure core properties are initialized
         gameState.lastUpdate = gameState.lastUpdate || Date.now();
         gameState.settings = gameState.settings || { soundEnabled: true, musicEnabled: true, theme: "dark" };
-        gameState.progression = gameState.progression || { unlockedTabs: ["boosts-tab"], achievements: {} };
+        gameState.progression = gameState.progression || { 
+            unlockedTabs: ["boosts-tab"], 
+            achievements: {},
+            milestones: {},
+            storyEvents: {}
+        };
+        gameState.loopCount = gameState.loopCount || 0;
+        gameState.playerId = gameState.playerId || "player" + Math.floor(Math.random() * 10000);
         
         // Initialize background music
         initBackgroundMusic();
@@ -623,8 +631,29 @@ document.addEventListener("DOMContentLoaded", function initGame() {
             }
         });
         
-        // Start game loop with a short delay to ensure DOM is ready
-        setTimeout(gameLoop, 100);
+        // Wait for everything to load, then initialize randomizer
+        setTimeout(() => {
+            // Always initialize randomizer for consistency, unless it's already been applied
+            if (!gameState.randomized) {
+                console.log("Initializing randomizer for new game or reset...");
+                
+                // Initialize randomizer with player ID and loop count
+                initRandomizer();
+                
+                // Mark that randomizer has been applied
+                gameState.randomized = true;
+                
+                // Save game after randomizer is applied
+                saveGame();
+                
+                console.log("Randomizer initialized and game saved");
+            } else {
+                console.log("Randomizer already applied, skipping initialization");
+            }
+            
+            // Start game loop
+            setTimeout(gameLoop, 100);
+        }, 300);
         
         console.log("Game initialization complete!");
     } catch (error) {
@@ -887,8 +916,12 @@ function updateRates() {
     
     // 5. Generate followers from influence (0.0001% of total influence per second)
     if (gameState.resources.influence > 0) {
-        const followerFromInfluence = gameState.resources.influence * 0.000001;
+        // Significantly increased rate for better follower generation
+        const followerFromInfluence = gameState.resources.influence * 0.001; // 0.1% of influence per second
         gameState.rates.followers += followerFromInfluence;
+        
+        // Log this for debugging if followers aren't updating
+        console.log(`Followers from influence: +${followerFromInfluence.toFixed(4)}/s from ${gameState.resources.influence} influence`);
     }
 
     // 6. Apply Global Multipliers to Rates
@@ -906,6 +939,15 @@ function updateRates() {
             gameState.rates[r] *= prestigeMultiplier;
         }
     }
+    
+    // Log current rates for debugging
+    console.log("Current resource rates:", {
+        credits: gameState.rates.credits,
+        followers: gameState.rates.followers,
+        influence: gameState.rates.influence,
+        techPoints: gameState.rates.techPoints,
+        energy: gameState.rates.energy
+    });
 }
 
 // --- Manual Actions ---
@@ -1084,17 +1126,32 @@ function buyBoost(boostId) {
         return;
     }
     
-    // Calculate costs with safeguards
-    const cost = {};
+    // Determine how many levels to buy based on clickMultiplier
+    let levelsToBuy = 1;
+    
+    if (gameState.clickMultiplier === "MAX") {
+        // For MAX, calculate max possible levels based on resources
+        levelsToBuy = calculateMaxAffordableLevels(boost);
+        if (levelsToBuy <= 0) {
+            addLogMessage(`Insufficient resources to upgrade ${boost.name}.`);
+            return;
+        }
+    } else {
+        // Use clickMultiplier directly
+        levelsToBuy = gameState.clickMultiplier;
+    }
+    
+    // Calculate total cost for all levels
+    const totalCost = {};
     let canAfford = true;
     let costString = "";
     
     try {
-        // Ensure level is a valid number
-        const level = boost.level || 0;
+        // Start with current level
+        const startLevel = boost.level || 0;
         const costMultiplier = boost.costMultiplier || 1.15;
         
-        // Calculate cost for each resource
+        // Calculate cost for each resource across all levels to buy
         for (const resource in boost.baseCost) {
             // Safety check for resources
             if (!gameState.resources.hasOwnProperty(resource)) {
@@ -1102,12 +1159,19 @@ function buyBoost(boostId) {
                 continue;
             }
             
+            // Add up costs for each level
+            let resourceTotalCost = 0;
             const baseAmount = boost.baseCost[resource] || 0;
-            const currentCost = Math.floor(baseAmount * Math.pow(costMultiplier, level));
-            cost[resource] = currentCost;
-            costString += `${formatNumber(currentCost)} ${resource}, `;
             
-            if (gameState.resources[resource] < currentCost) {
+            for (let i = 0; i < levelsToBuy; i++) {
+                const levelCost = Math.floor(baseAmount * Math.pow(costMultiplier, startLevel + i));
+                resourceTotalCost += levelCost;
+            }
+            
+            totalCost[resource] = resourceTotalCost;
+            costString += `${formatNumber(resourceTotalCost)} ${resource}, `;
+            
+            if (gameState.resources[resource] < resourceTotalCost) {
                 canAfford = false;
             }
         }
@@ -1124,16 +1188,16 @@ function buyBoost(boostId) {
             playSound("sounds/click.wav"); // Play click sound
             
             // Deduct resources
-            for (const resource in cost) {
-                gameState.resources[resource] -= cost[resource];
+            for (const resource in totalCost) {
+                gameState.resources[resource] -= totalCost[resource];
             }
             
             // Increment level
-            boost.level = (boost.level || 0) + 1;
+            boost.level = (boost.level || 0) + levelsToBuy;
             
             // Log success
-            addLogMessage(`${boost.name} upgraded to Level ${boost.level}.`);
-            console.log(`Successfully upgraded ${boostId} to level ${boost.level}`);
+            addLogMessage(`${boost.name} upgraded by ${levelsToBuy} level${levelsToBuy > 1 ? 's' : ''} to Level ${boost.level}.`);
+            console.log(`Successfully upgraded ${boostId} by ${levelsToBuy} levels to level ${boost.level}`);
             
             // Update game state
             updateRates();
@@ -1145,14 +1209,64 @@ function buyBoost(boostId) {
             addLogMessage("An error occurred while upgrading. Please try again.");
         }
     } else {
-        addLogMessage(`Insufficient resources to upgrade ${boost.name}. Requires: ${costString}`);
+        addLogMessage(`Insufficient resources to upgrade ${boost.name} ${levelsToBuy} time${levelsToBuy > 1 ? 's' : ''}. Requires: ${costString}`);
     }
+}
+
+// Helper function to calculate maximum affordable boost levels
+function calculateMaxAffordableLevels(boost) {
+    const startLevel = boost.level || 0;
+    const costMultiplier = boost.costMultiplier || 1.15;
+    
+    // Clone resources for calculation
+    const availableResources = {};
+    for (const resource in gameState.resources) {
+        availableResources[resource] = gameState.resources[resource];
+    }
+    
+    // Try buying levels until we can't afford more
+    let levelsBought = 0;
+    let canAffordMore = true;
+    
+    while (canAffordMore) {
+        // Check if we can afford the next level
+        canAffordMore = true;
+        
+        for (const resource in boost.baseCost) {
+            const baseAmount = boost.baseCost[resource] || 0;
+            const levelCost = Math.floor(baseAmount * Math.pow(costMultiplier, startLevel + levelsBought));
+            
+            if (availableResources[resource] < levelCost) {
+                canAffordMore = false;
+                break;
+            }
+        }
+        
+        if (canAffordMore) {
+            // Deduct resources for this level
+            levelsBought++;
+            
+            for (const resource in boost.baseCost) {
+                const baseAmount = boost.baseCost[resource] || 0;
+                const levelCost = Math.floor(baseAmount * Math.pow(costMultiplier, startLevel + levelsBought - 1));
+                availableResources[resource] -= levelCost;
+            }
+            
+            // Limit to 100 levels at a time to prevent infinite loops or lag
+            if (levelsBought >= 100) break;
+        }
+    }
+    
+    return levelsBought;
 }
 
 function buyItem(itemId) {
     const item = gameState.items[itemId];
     if (!item) return;
-    if (item.max && item.count >= item.max) {
+    
+    // Calculate max items that can be bought based on max limit
+    const maxLimit = item.max ? item.max - item.count : Infinity;
+    if (maxLimit <= 0) {
         addLogMessage(`Maximum count reached for ${item.name}.`);
         return;
     }
@@ -1164,30 +1278,121 @@ function buyItem(itemId) {
         return;
     }
 
-    const cost = {};
+    // Determine how many items to buy based on clickMultiplier
+    let itemsToBuy = 1;
+    
+    if (gameState.clickMultiplier === "MAX") {
+        // For MAX, calculate max possible items based on resources and max limit
+        itemsToBuy = calculateMaxAffordableItems(item);
+        if (itemsToBuy <= 0) {
+            addLogMessage(`Insufficient resources to construct ${item.name}.`);
+            return;
+        }
+    } else {
+        // Use clickMultiplier directly
+        itemsToBuy = gameState.clickMultiplier;
+    }
+    
+    // Cap items to buy at the max limit
+    itemsToBuy = Math.min(itemsToBuy, maxLimit);
+    if (itemsToBuy <= 0) {
+        addLogMessage(`Cannot construct more ${item.name} (max limit reached).`);
+        return;
+    }
+
+    // Calculate total cost for all items
+    const totalCost = {};
     let canAfford = true;
+    let costString = "";
+    
     for (const resource in item.baseCost) {
-        const currentCost = item.baseCost[resource] * Math.pow(item.costMultiplier, item.count);
-        cost[resource] = currentCost;
-        if (gameState.resources[resource] < currentCost) {
+        let resourceTotalCost = 0;
+        
+        // Calculate cost for each item being purchased
+        for (let i = 0; i < itemsToBuy; i++) {
+            const itemCost = item.baseCost[resource] * Math.pow(item.costMultiplier, item.count + i);
+            resourceTotalCost += itemCost;
+        }
+        
+        totalCost[resource] = resourceTotalCost;
+        costString += `${formatNumber(resourceTotalCost)} ${resource}, `;
+        
+        if (gameState.resources[resource] < resourceTotalCost) {
             canAfford = false;
             break;
         }
     }
+    costString = costString.slice(0, -2); // Remove trailing comma and space
 
     if (canAfford) {
         playSound("sounds/click.wav"); // Play click sound
-        for (const resource in cost) {
-            gameState.resources[resource] -= cost[resource];
+        
+        // Deduct resources
+        for (const resource in totalCost) {
+            gameState.resources[resource] -= totalCost[resource];
         }
-        item.count++;
-        addLogMessage(`Constructed ${item.name} (Total: ${item.count}).`);
+        
+        // Increment count
+        item.count += itemsToBuy;
+        
+        // Log success
+        addLogMessage(`Constructed ${itemsToBuy} ${item.name}${itemsToBuy > 1 ? 's' : ''} (Total: ${item.count}).`);
+        
         updateRates();
         updateResourceDisplay();
         updateItemsDisplay(); // Refresh item display
     } else {
-        addLogMessage(`Insufficient resources to construct ${item.name}.`);
+        addLogMessage(`Insufficient resources to construct ${itemsToBuy} ${item.name}${itemsToBuy > 1 ? 's' : ''}. Requires: ${costString}`);
     }
+}
+
+// Helper function to calculate maximum affordable items
+function calculateMaxAffordableItems(item) {
+    const startCount = item.count || 0;
+    const costMultiplier = item.costMultiplier || 1.0;
+    const maxLimit = item.max ? item.max - startCount : Infinity;
+    
+    // Early exit if already at max
+    if (maxLimit <= 0) return 0;
+    
+    // Clone resources for calculation
+    const availableResources = {};
+    for (const resource in gameState.resources) {
+        availableResources[resource] = gameState.resources[resource];
+    }
+    
+    // Try buying items until we can't afford more
+    let itemsBought = 0;
+    let canAffordMore = true;
+    
+    while (canAffordMore && itemsBought < maxLimit) {
+        // Check if we can afford the next item
+        canAffordMore = true;
+        
+        for (const resource in item.baseCost) {
+            const itemCost = item.baseCost[resource] * Math.pow(costMultiplier, startCount + itemsBought);
+            
+            if (availableResources[resource] < itemCost) {
+                canAffordMore = false;
+                break;
+            }
+        }
+        
+        if (canAffordMore) {
+            // Deduct resources for this item
+            itemsBought++;
+            
+            for (const resource in item.baseCost) {
+                const itemCost = item.baseCost[resource] * Math.pow(costMultiplier, startCount + itemsBought - 1);
+                availableResources[resource] -= itemCost;
+            }
+            
+            // Limit to 100 items at a time to prevent infinite loops or lag
+            if (itemsBought >= 100) break;
+        }
+    }
+    
+    return itemsBought;
 }
 
 function researchTech(techId) {
@@ -1451,6 +1656,59 @@ function formatNumber(num) {
     return (num / 1000000000).toFixed(2) + "B";
 }
 
+// Manually inject CSS for resource update animation if it doesn't exist
+function injectResourceUpdateCSS() {
+    if (!document.getElementById('resource-update-style')) {
+        const style = document.createElement('style');
+        style.id = 'resource-update-style';
+        style.innerHTML = `
+            @keyframes resourceUpdated {
+                0% { color: inherit; }
+                50% { color: #00ff00; }
+                100% { color: inherit; }
+            }
+            .resource-updated {
+                animation: resourceUpdated 0.5s ease;
+            }
+        `;
+        document.head.appendChild(style);
+        console.log("Resource update CSS injected");
+    }
+}
+
+// Function to directly update the followers display by accessing the DOM element
+function forceUpdateFollowers() {
+    // First ensure CSS for animation is present
+    injectResourceUpdateCSS();
+    
+    // Get the followers element directly from DOM
+    const followersElement = document.getElementById("followers-value");
+    if (followersElement) {
+        // Get current followers (rounded to integer)
+        const followerCount = Math.floor(gameState.resources.followers);
+        
+        // Directly set the text content
+        followersElement.textContent = followerCount;
+        
+        // Add visual feedback
+        followersElement.classList.add('resource-updated');
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            followersElement.classList.remove('resource-updated');
+        }, 500);
+        
+        // Log update
+        console.log(`FORCE UPDATE: Followers set to ${followerCount}`);
+        return true;
+    } else {
+        console.error("CRITICAL: Could not find followers-value element in the DOM");
+        // Try to dump the DOM structure to see what's wrong
+        console.log("DOM structure:", document.body.innerHTML.substring(0, 200) + "...");
+        return false;
+    }
+}
+
 // Update resource display
 function updateResourceDisplay() {
     try { // Added try-catch
@@ -1458,14 +1716,43 @@ function updateResourceDisplay() {
         document.getElementById("credits-rate").textContent = formatNumber(gameState.rates.credits) + "/s";
 
         // Show followers as integers (rounded)
-        document.getElementById("followers-value").textContent = Math.floor(gameState.resources.followers);
-        document.getElementById("followers-rate").textContent = formatNumber(gameState.rates.followers) + "/s";
+        const followersValue = document.getElementById("followers-value");
+        if (followersValue) {
+            followersValue.textContent = Math.floor(gameState.resources.followers);
+        } else {
+            // Try to force create and update the followers element if it doesn't exist
+            console.error("Followers display element not found, attempting emergency fix...");
+            const resourcesPanel = document.querySelector('.resources-panel');
+            if (resourcesPanel) {
+                // Look for the followers section
+                const followersSection = resourcesPanel.querySelector('.resource-item[data-resource="followers"]');
+                if (!followersSection) {
+                    console.log("Creating missing followers section");
+                    const newFollowersSection = document.createElement('div');
+                    newFollowersSection.className = 'resource-item';
+                    newFollowersSection.setAttribute('data-resource', 'followers');
+                    newFollowersSection.innerHTML = `
+                        <div class="resource-name">Followers</div>
+                        <div class="resource-value"><span id="followers-value">0</span></div>
+                        <div class="resource-rate"><span id="followers-rate">0.0/s</span></div>
+                    `;
+                    resourcesPanel.appendChild(newFollowersSection);
+                }
+            }
+        }
         
-        // Add tooltip for followers rate to show influence bonus
-        const followersRateElement = document.getElementById("followers-rate");
-        if (followersRateElement && gameState.resources.influence > 0) {
-            const influenceBonus = gameState.resources.influence * 0.000001;
-            followersRateElement.title = `+${formatNumber(influenceBonus)}/s from Influence`;
+        // Always try to force update followers separately from rest of display
+        forceUpdateFollowers();
+        
+        const followersRate = document.getElementById("followers-rate");
+        if (followersRate) {
+            followersRate.textContent = formatNumber(gameState.rates.followers) + "/s";
+            
+            // Add tooltip for followers rate to show influence bonus
+            if (gameState.resources.influence > 0) {
+                const influenceBonus = gameState.resources.influence * 0.0001;
+                followersRate.title = `+${formatNumber(influenceBonus)}/s from Influence`;
+            }
         }
 
         document.getElementById("influence-value").textContent = formatNumber(gameState.resources.influence);
@@ -1474,7 +1761,7 @@ function updateResourceDisplay() {
         // Add tooltip for influence value to show follower generation
         const influenceElement = document.getElementById("influence-value");
         if (influenceElement && gameState.resources.influence > 0) {
-            const followersGenerated = gameState.resources.influence * 0.000001;
+            const followersGenerated = gameState.resources.influence * 0.0001;
             influenceElement.title = `Generates ${formatNumber(followersGenerated)} followers/s`;
         }
 
@@ -1529,7 +1816,7 @@ function updateResourceDisplay() {
             }
         }
     } catch (error) {
-        console.error("Error in updateResourceDisplay:", error); // Added error logging
+        console.error("Error in updateResourceDisplay:", error, "Followers value:", gameState.resources.followers); // Added more detailed error logging
     }
 }
 
@@ -1646,6 +1933,7 @@ function updateItemsDisplay() {
                 costString += `${formatNumber(currentCost)} ${resource}, `;
                 if (!gameState.resources || gameState.resources[resource] === undefined || gameState.resources[resource] < currentCost) {
                     canAfford = false;
+                    break;
                 }
             }
             costString = costString.slice(0, -2); // Remove trailing comma and space
@@ -2072,6 +2360,14 @@ function updateTerritoriesDisplay() {
         return;
     }
     
+    // Log faction standings and territory ownership for debugging
+    console.log("DEBUG: Current faction standings:", gameState.factionStanding);
+    console.log("DEBUG: Territory ownership:");
+    for (const territoryId in gameState.territories) {
+        const owner = gameState.territories[territoryId].owner || "None";
+        console.log(`- ${territoryId}: ${owner}`);
+    }
+    
     // Draw connections first (so they appear under the territory nodes)
     territoryConnections.forEach(connection => {
         const fromTerritory = gameState.territories[connection.from];
@@ -2156,6 +2452,9 @@ function updateTerritoriesDisplay() {
             } else {
                 territoryElement.classList.add("neutral-controlled");
             }
+            
+            // Add owner name as a data attribute for tooltips
+            territoryElement.dataset.owner = territory.owner;
         }
         
         // Position element
@@ -2173,6 +2472,12 @@ function updateTerritoriesDisplay() {
         const nameElement = document.createElement("div");
         nameElement.classList.add("territory-location-name");
         nameElement.textContent = territory.name;
+        
+        // Add owner indicator if the territory has an owner
+        if (territory.owner) {
+            nameElement.innerHTML = `${territory.name}<span class="territory-owner"> (${territory.owner})</span>`;
+        }
+        
         territoryElement.appendChild(nameElement);
         
         // Add click event
@@ -2268,6 +2573,17 @@ function updateTerritoryInfoPanel(territoryId) {
             }
             
             factionControlElement.innerHTML = `<span class="${relationshipClass}">Controlled by: ${territory.owner}</span>`;
+            // Add relationship status if applicable
+            if (territory.owner !== "Player" && gameState.factionStanding) {
+                const standing = gameState.factionStanding[territory.owner] || 0;
+                let relationshipType = "Neutral";
+                if (standing > 30) relationshipType = "Strong Ally";
+                else if (standing > 0) relationshipType = "Ally";
+                else if (standing < -30) relationshipType = "Enemy";
+                else if (standing < 0) relationshipType = "Rival";
+                
+                factionControlElement.innerHTML += ` <span class="faction-standing">(${relationshipType}, Standing: ${standing})</span>`;
+            }
         } else {
             factionControlElement.innerHTML = "Uncontrolled";
         }
@@ -2346,7 +2662,7 @@ function updateTerritoryInfoPanel(territoryId) {
             actionButton.className = "territory-button " + (territory.active ? "deactivate" : "activate");
             actionButton.disabled = false;
             actionButton.onclick = () => {
-                captureTerritory(territoryId);
+                activateTerritory(territoryId);
                 updateTerritoriesDisplay();
             };
         } else if (prereqsMet) {
@@ -2427,15 +2743,48 @@ function updateClickMultiplierDisplay() {
     const clickMultiplierButton = document.getElementById("click-multiplier-button");
     if (clickMultiplierButton) {
         clickMultiplierButton.textContent = `Clicks: ${gameState.clickMultiplier}x`;
+        
+        // Add tooltip explaining what the multiplier affects
+        clickMultiplierButton.title = `Click multiplier (${gameState.clickMultiplier}x) affects:
+- Operations Panel actions (Collect Tech Points, Generate Energy)
+- Purchasing boosts (buy multiple levels at once)
+- Constructing items (build multiple items at once)
+Click to cycle through multiplier values: 1x → 5x → 10x → 100x → MAX → 1x`;
     }
 }
 
 // --- Game Loop and Saving ---
 
+// Create a dedicated function to update the followers display
+function updateFollowersDisplay() {
+    const followersValue = document.getElementById("followers-value");
+    if (followersValue) {
+        // Add a visual indicator by briefly changing the color
+        followersValue.classList.add('resource-updated');
+        
+        // Set the value - make sure to floor the value for integer display
+        const followerCount = Math.floor(gameState.resources.followers);
+        followersValue.textContent = followerCount;
+        
+        // Log the update for debugging
+        console.log(`Followers display updated: ${followerCount}`);
+        
+        // Remove the visual indicator after a short delay
+        setTimeout(() => {
+            followersValue.classList.remove('resource-updated');
+        }, 300);
+    } else {
+        console.error("Followers value element not found in DOM");
+    }
+}
+
 // Main game loop (runs every second)
 function gameLoop() {
     const now = Date.now();
     const delta = (now - gameState.lastUpdate) / 1000; // Time difference in seconds
+
+    // Store previous follower count to check if it changed
+    const previousFollowers = Math.floor(gameState.resources.followers);
 
     updateRates(); // Recalculate rates based on current boosts, items, tech, territories
 
@@ -2449,10 +2798,13 @@ function gameLoop() {
     // Round followers to integers
     gameState.resources.followers = Math.floor(gameState.resources.followers);
     
+    // ALWAYS force update followers on every game tick
+    forceUpdateFollowers();
+    
     // Calculate rebellion strength from other resources
     updateRebellionStrength();
 
-    // Check for mission completion (Ensure this block is present)
+    // Check for mission completion
     if (gameState.missions && gameState.missions.activeMission && gameState.missions.missionStartTime) {
         const mission = gameState.missions.availableMissions[gameState.missions.activeMission];
         if (mission) { // Check if mission exists before accessing duration
@@ -2484,7 +2836,7 @@ function gameLoop() {
         }
     }
 
-    // Update UI
+    // Update UI - always refresh resource display to ensure followers update properly
     updateResourceDisplay(); // Refresh basic resources
     updateButtonStates(); // Update button disabled states
 
@@ -3461,11 +3813,26 @@ function resetAfterAttack(wasSuccessful) {
         gameState.missions.activeMission = null;
     }
 
-    /* Preserve achievements but reset unlocked tabs */
+    /* Preserve achievements and required progression data */
+    const currentAchievements = gameState.progression && gameState.progression.achievements ? gameState.progression.achievements : {};
+    
+    // Reset progression but keep achievements and initialize required objects
     gameState.progression = {
         unlockedTabs: ["boosts-tab"],
-        achievements: gameState.progression.achievements || {}
+        achievements: currentAchievements,
+        milestones: {},
+        storyEvents: {}
     };
+
+    // Increment loop count for a new run
+    gameState.loopCount = (gameState.loopCount || 0) + 1;
+    console.log(`Starting new game loop: ${gameState.loopCount}`);
+    
+    // Set randomized flag to false to ensure randomizer runs again
+    gameState.randomized = false;
+    
+    // Initialize a new randomizer run with the new loop count
+    initRandomizer();
 
     if (wasSuccessful) {
         addLogMessage(`Attack successful! GigaCorp defeated! Gained ${gameState.resources.gigaTech} GigaTech.`);
@@ -3843,6 +4210,66 @@ function checkProgressionTriggers() {
     }
 }
 
+// Add resources panel scroll effect
+window.addEventListener('scroll', function() {
+    const resourcesPanel = document.querySelector('.resources-panel');
+    const header = document.querySelector('.game-header');
+    
+    if (resourcesPanel && header) {
+        if (window.scrollY > header.offsetHeight) {
+            resourcesPanel.classList.add('scrolled');
+        } else {
+            resourcesPanel.classList.remove('scrolled');
+        }
+    }
+});
 
+// Expose functions needed by HTML onclick handlers to the global scope
+window.mineCredits = mineCredits;
+window.collectTechPoints = collectTechPoints;
 
+// Function to initialize randomizer
+function initRandomizer() {
+    // Make sure window.randomizer exists
+    if (!window.randomizer) {
+        console.error("Randomizer object not found, skipping initialization");
+        return;
+    }
+    
+    console.log("Initializing randomizer for game...");
+    
+    // Initialize with player info
+    const playerId = gameState.playerId || "player" + Math.floor(Math.random() * 10000);
+    const loopIndex = gameState.loopCount || 0;
+    
+    // Store player ID for consistency
+    gameState.playerId = playerId;
+    
+    // Initialize randomizer
+    window.randomizer.init(playerId, loopIndex, Date.now());
+    
+    // Apply to game state
+    const success = window.randomizer.applyToGameState(gameState);
+    
+    if (success) {
+        console.log("Randomizer successfully applied to game state");
+        
+        // Mark that randomizer has been applied to this game session
+        gameState.randomized = true;
+        
+        // Save the game after applying randomizer
+        saveGame();
+        
+        // Update UI displays
+        updateAllDisplays();
+        
+        // Update randomizer tab if it exists
+        const randomizerTab = document.getElementById('randomizer-tab');
+        if (randomizerTab) {
+            window.randomizer.renderUI('randomizer-tab');
+        }
+    } else {
+        console.error("Failed to apply randomizer to game state");
+    }
+}
         

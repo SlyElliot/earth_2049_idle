@@ -200,51 +200,156 @@ class RunSeedRandomizer {
     loadData() {
         // Initialize with default data
         this.data = {
-            districts: [],
-            homeDistricts: {},
-            factions: [],
-            factionWeights: {},
-            diplomacyRules: {},
-            mutators: [],
-            dispositions: []
+            districts: [
+                "downtown", "industrialZone", "techDistrict", "harborArea", 
+                "livingTowers", "governmentQuarter", "muskersTerritory",
+                "cryptidsDomain", "shillzCentral", "mechRebelsBase", 
+                "hackersDen", "revolutionaryHub", "abandonedSector",
+                "aiLabs", "gigaCorpHQ"
+            ],
+            homeDistricts: {
+                "ShillZ": "shillzCentral",
+                "GigaCorp": "gigaCorpHQ",
+                "Muskers": "muskersTerritory",
+                "Cryptids": "cryptidsDomain",
+                "Hackers": "hackersDen",
+                "MechRebels": "mechRebelsBase"
+            },
+            factions: [
+                "ShillZ", "GigaCorp", "Muskers", "Cryptids", "Hackers", "MechRebels"
+            ],
+            factionWeights: {
+                "ShillZ": 50,
+                "GigaCorp": 40,
+                "Muskers": 50,
+                "Cryptids": 40,
+                "Hackers": 50,
+                "MechRebels": 40
+            },
+            diplomacyRules: {
+                "ShillZ": {
+                    ally_choices: ["Muskers", "Hackers", "MechRebels"],
+                    rival_choices: ["GigaCorp", "Cryptids"]
+                },
+                "GigaCorp": {
+                    ally_choices: ["Muskers", "Cryptids"],
+                    rival_choices: ["ShillZ", "Hackers", "MechRebels"]
+                },
+                "Muskers": {
+                    ally_choices: ["ShillZ", "GigaCorp", "MechRebels"],
+                    rival_choices: ["Cryptids", "Hackers"]
+                },
+                "Cryptids": {
+                    ally_choices: ["GigaCorp", "Hackers"],
+                    rival_choices: ["ShillZ", "Muskers", "MechRebels"]
+                },
+                "Hackers": {
+                    ally_choices: ["ShillZ", "Cryptids", "MechRebels"],
+                    rival_choices: ["GigaCorp", "Muskers"]
+                },
+                "MechRebels": {
+                    ally_choices: ["ShillZ", "Muskers", "Hackers"],
+                    rival_choices: ["GigaCorp", "Cryptids"]
+                }
+            },
+            mutators: [
+                {
+                    id: "economyBoost",
+                    name: "Economy Boost",
+                    description: "Increases all resource generation",
+                    category: "Economy",
+                    effect: {
+                        "credits": 1.25,
+                        "followers": 1.2,
+                        "influence": 1.15,
+                        "techPoints": 1.2,
+                        "energy": 1.15
+                    }
+                },
+                {
+                    id: "resourceScarcity",
+                    name: "Resource Scarcity",
+                    description: "Decreases resource generation",
+                    category: "Economy",
+                    effect: {
+                        "credits": 0.8,
+                        "followers": 0.85,
+                        "influence": 0.9,
+                        "techPoints": 0.85,
+                        "energy": 0.9
+                    }
+                },
+                {
+                    id: "diplomaticTensions",
+                    name: "Diplomatic Tensions",
+                    description: "Makes factions more hostile",
+                    category: "Diplomacy",
+                    effect: {
+                        "reputationGainRate": 0.75,
+                        "reputationLossRate": 1.25
+                    }
+                }
+            ],
+            dispositions: [
+                {
+                    name: "Observation",
+                    minMindControl: 0,
+                    maxMindControl: 30
+                },
+                {
+                    name: "Assistance",
+                    minMindControl: 31,
+                    maxMindControl: 60
+                },
+                {
+                    name: "Control",
+                    minMindControl: 61,
+                    maxMindControl: 100
+                }
+            ]
         };
         
-        // Load districts data
+        // Log the initial data
+        console.log("Initialized randomizer with default data:", this.data);
+        
+        // Try to load data from JSON files
         fetch('data/randomizer/districts.json')
             .then(response => response.json())
             .then(data => {
-                this.data.districts = data.districts || [];
-                this.data.homeDistricts = data.homeDistricts || {};
+                this.data.districts = data.districts || this.data.districts;
+                this.data.homeDistricts = data.homeDistricts || this.data.homeDistricts;
                 console.log("Districts data loaded");
             })
             .catch(error => {
                 console.error("Error loading districts data:", error);
-                // Fallback data will be kept
+                // Fallback data already set
             });
         
         // Load factions data
         fetch('data/randomizer/factions.json')
             .then(response => response.json())
             .then(data => {
-                this.data.factions = data.factions || [];
-                this.data.factionWeights = data.factionWeights || {};
-                this.data.diplomacyRules = data.diplomacyRules || {};
+                this.data.factions = data.factions || this.data.factions;
+                this.data.factionWeights = data.factionWeights || this.data.factionWeights;
+                this.data.diplomacyRules = data.diplomacyRules || this.data.diplomacyRules;
                 console.log("Factions data loaded");
             })
             .catch(error => {
                 console.error("Error loading factions data:", error);
+                // Fallback data already set
             });
         
         // Load mutators data
         fetch('data/randomizer/mutators.json')
             .then(response => response.json())
             .then(data => {
-                this.data.mutators = data.mutators || [];
-                this.data.dispositions = data.dispositions || [];
+                this.data.mutators = data.mutators || this.data.mutators;
+                this.data.dispositions = data.dispositions || this.data.dispositions;
                 console.log("Mutators data loaded");
             })
             .catch(error => {
                 console.error("Error loading mutators data:", error);
+                // Fallback data already set
             });
     }
     
@@ -477,37 +582,87 @@ class RunSeedRandomizer {
             return false;
         }
         
+        console.log("Applying randomizer blueprint to game state:", this.blueprint);
+        
+        // Initialize faction standings if it doesn't exist
+        if (!gameState.factionStanding) {
+            console.log("Creating factionStanding object in gameState");
+            gameState.factionStanding = {
+                "ShillZ": 0,
+                "GigaCorp": -50, // Player starts opposed to GigaCorp
+                "Muskers": 0,
+                "Cryptids": 0,
+                "Hackers": 0,
+                "MechRebels": 0
+            };
+        }
+        
         // Apply sector ownership
         if (gameState.territories) {
+            console.log("Applying sector ownership to territories");
             for (const [district, faction] of Object.entries(this.blueprint.sectorOwnership)) {
-                if (gameState.territories[district]) {
-                    gameState.territories[district].owner = faction;
-                    gameState.territories[district].controlled = true;
+                // Convert district name to match territory keys if needed
+                let territoryKey = district;
+                
+                // Handle possible naming mismatches between district IDs and territory keys
+                if (!gameState.territories[district]) {
+                    // Try to find a matching territory by doing a case-insensitive comparison
+                    const possibleMatch = Object.keys(gameState.territories).find(
+                        key => key.toLowerCase() === district.toLowerCase()
+                    );
+                    if (possibleMatch) {
+                        territoryKey = possibleMatch;
+                        console.log(`Found matching territory: ${district} -> ${territoryKey}`);
+                    }
+                }
+                
+                if (gameState.territories[territoryKey]) {
+                    // Set owner property
+                    gameState.territories[territoryKey].owner = faction;
+                    
+                    // Set controlled property - but don't set "unlocked" to keep game progression
+                    if (typeof gameState.territories[territoryKey].controlled === 'undefined') {
+                        gameState.territories[territoryKey].controlled = true;
+                    }
+                    
+                    console.log(`Set territory ${territoryKey} owner to ${faction}`);
+                } else {
+                    console.warn(`Territory ${district} (${territoryKey}) not found in gameState. Available territories:`, Object.keys(gameState.territories));
                 }
             }
+        } else {
+            console.warn("No territories object found in gameState");
         }
         
         // Apply diplomacy
-        if (gameState.factionStanding) {
-            for (const [faction, relations] of Object.entries(this.blueprint.diplomacy)) {
-                // Set initial standings
-                // Allies get positive standing
-                relations.allies.forEach(ally => {
+        console.log("Applying diplomacy settings");
+        for (const [faction, relations] of Object.entries(this.blueprint.diplomacy)) {
+            // Set initial standings
+            // Allies get positive standing
+            relations.allies.forEach(ally => {
+                if (gameState.factionStanding.hasOwnProperty(ally)) {
                     gameState.factionStanding[ally] = 20;
-                });
-                
-                // Rivals get negative standing
-                relations.rivals.forEach(rival => {
+                    console.log(`Set ${ally} as ally (standing: 20)`);
+                }
+            });
+            
+            // Rivals get negative standing
+            relations.rivals.forEach(rival => {
+                if (gameState.factionStanding.hasOwnProperty(rival)) {
                     gameState.factionStanding[rival] = -20;
-                });
-            }
+                    console.log(`Set ${rival} as rival (standing: -20)`);
+                }
+            });
         }
         
         // Apply mind control and disposition
         gameState.mindControlIndex = this.blueprint.mindControlIndex;
         gameState.turingDisposition = this.blueprint.turingDisposition;
+        console.log(`Set mindControlIndex to ${gameState.mindControlIndex}`);
+        console.log(`Set turingDisposition to ${gameState.turingDisposition}`);
         
         // Apply mutators
+        console.log("Applying mutators");
         this.blueprint.mutators.forEach(mutator => {
             // Apply effect based on category
             if (mutator.category === "Economy") {
@@ -544,6 +699,7 @@ class RunSeedRandomizer {
             console.log(`Applied mutator: ${mutator.name} - ${mutator.description}`);
         });
         
+        console.log("Randomizer blueprint successfully applied to game state");
         return true;
     }
     

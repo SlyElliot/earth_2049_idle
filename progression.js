@@ -193,7 +193,12 @@ function initStoryEvents() {
         },
         dataBreachDiscovery: {
             triggered: false,
-            condition: () => gameState.baseProductionBoosts.techBoostTechPoints.level >= 3, // Updated reference
+            condition: () => {
+                // Check if baseProductionBoosts and techBoostTechPoints exist before accessing level
+                return gameState.baseProductionBoosts && 
+                       gameState.baseProductionBoosts.techBoostTechPoints && 
+                       gameState.baseProductionBoosts.techBoostTechPoints.level >= 3;
+            },
             action: () => {
                 addLogMessage("Story Event: Your tech probes have discovered a vulnerable GigaCorp database.");
                 setTimeout(() => {
@@ -208,7 +213,11 @@ function initStoryEvents() {
         },
         energyCrisis: {
             triggered: false,
-            condition: () => gameState.baseProductionBoosts.techBoostEnergy.level >= 4, // Updated reference
+            condition: () => {
+                return gameState.baseProductionBoosts && 
+                       gameState.baseProductionBoosts.techBoostEnergy && 
+                       gameState.baseProductionBoosts.techBoostEnergy.level >= 4;
+            },
             action: () => {
                 addLogMessage("Story Event: An energy crisis is affecting the lower sectors.");
                 setTimeout(() => {
@@ -255,7 +264,11 @@ function initStoryEvents() {
         },
         corporateEspionage: {
             triggered: false,
-            condition: () => gameState.techTree.aiAutomation.completed, // Updated reference
+            condition: () => {
+                return gameState.techTree && 
+                       gameState.techTree.aiAutomation && 
+                       gameState.techTree.aiAutomation.completed;
+            },
             action: () => {
                 addLogMessage("Story Event: Your AI research has been targeted by GigaCorp spies.");
                 setTimeout(() => {
@@ -307,7 +320,11 @@ function initStoryEvents() {
         },
         quantumDiscovery: { // Renamed to advancedHackingDiscovery
             triggered: false,
-            condition: () => gameState.techTree.advancedHacking.completed, // Updated reference
+            condition: () => {
+                return gameState.techTree && 
+                       gameState.techTree.advancedHacking && 
+                       gameState.techTree.advancedHacking.completed;
+            },
             action: () => {
                 addLogMessage("Story Event: Your advanced hacking research has led to a significant discovery.");
                 setTimeout(() => {
@@ -322,7 +339,11 @@ function initStoryEvents() {
         },
         artificialConsciousness: { // Renamed to ogDeviceEvent
             triggered: false,
-            condition: () => gameState.techTree.ogDeviceUpgrade.completed, // Updated reference
+            condition: () => {
+                return gameState.techTree && 
+                       gameState.techTree.ogDeviceUpgrade && 
+                       gameState.techTree.ogDeviceUpgrade.completed;
+            },
             action: () => {
                 addLogMessage("Story Event: Your OG Device upgrade has yielded unexpected results.");
                 setTimeout(() => {
@@ -337,7 +358,11 @@ function initStoryEvents() {
         },
         downtownUnlocked: {
             triggered: false,
-            condition: () => gameState.territories.downtown.unlocked, // Updated reference
+            condition: () => {
+                return gameState.territories && 
+                       gameState.territories.downtown && 
+                       gameState.territories.downtown.unlocked;
+            },
             action: () => {
                 addLogMessage("Story Event: You've gained access to the Downtown territory.");
                 setTimeout(() => {
@@ -351,7 +376,11 @@ function initStoryEvents() {
         },
         techDistrictUnlocked: {
             triggered: false,
-            condition: () => gameState.territories.techDistrict.unlocked, // Updated reference
+            condition: () => {
+                return gameState.territories && 
+                       gameState.territories.techDistrict && 
+                       gameState.territories.techDistrict.unlocked;
+            },
             action: () => {
                 addLogMessage("Story Event: You've secured the Tech District.");
                 setTimeout(() => {
@@ -365,7 +394,11 @@ function initStoryEvents() {
         },
         governmentQuarterUnlocked: { // Renamed from corporateTowersUnlocked
             triggered: false,
-            condition: () => gameState.territories.governmentQuarter.unlocked, // Updated reference
+            condition: () => {
+                return gameState.territories && 
+                       gameState.territories.governmentQuarter && 
+                       gameState.territories.governmentQuarter.unlocked;
+            },
             action: () => {
                 addLogMessage("Story Event: You've infiltrated the Government Quarter.");
                 setTimeout(() => {
@@ -379,7 +412,11 @@ function initStoryEvents() {
         },
         undergroundDenUnlocked: { // Renamed from undergroundMarketUnlocked
             triggered: false,
-            condition: () => gameState.territories.undergroundHackersDen.unlocked, // Updated reference
+            condition: () => {
+                return gameState.territories && 
+                       gameState.territories.undergroundHackersDen && 
+                       gameState.territories.undergroundHackersDen.unlocked;
+            },
             action: () => {
                 addLogMessage("Story Event: You've established a connection with the Underground Hackers Den.");
                 setTimeout(() => {
@@ -483,23 +520,76 @@ function unlockAchievement(achievementId) {
     }
 }
 
-// Check for progression triggers
+// Function to check progression triggers
 function checkProgressionTriggers() {
-    // Check for milestones
-    for (const milestoneId in gameState.progression.milestones) {
-        const milestone = gameState.progression.milestones[milestoneId];
-        if (!milestone.triggered && milestone.condition()) {
-            milestone.triggered = true;
-            milestone.action();
+    if (!gameState) {
+        console.warn("Game state not available for progression triggers");
+        return;
+    }
+    
+    // Initialize progression object if it doesn't exist
+    if (!gameState.progression) {
+        gameState.progression = { 
+            unlockedTabs: ["boosts-tab"], 
+            achievements: {},
+            milestones: {},
+            storyEvents: {}
+        };
+    }
+    
+    // Ensure all required sub-objects exist
+    if (!gameState.progression.milestones) gameState.progression.milestones = {};
+    if (!gameState.progression.storyEvents) gameState.progression.storyEvents = {};
+    if (!gameState.progression.achievements) gameState.progression.achievements = {};
+    
+    // Check milestone triggers
+    for (const [id, milestone] of Object.entries(gameState.progression.milestones)) {
+        if (!milestone.triggered) {
+            try {
+                if (milestone.condition()) {
+                    console.log(`Milestone triggered: ${id}`);
+                    milestone.action();
+                    milestone.triggered = true;
+                }
+            } catch (error) {
+                console.warn(`Error checking milestone ${id}:`, error);
+                // Continue to next milestone instead of breaking
+            }
         }
     }
     
-    // Check for story events
-    for (const eventId in gameState.progression.storyEvents) {
-        const event = gameState.progression.storyEvents[eventId];
-        if (!event.triggered && event.condition()) {
-            event.triggered = true;
-            event.action();
+    // Check story event triggers
+    for (const [id, event] of Object.entries(gameState.progression.storyEvents)) {
+        if (!event.triggered) {
+            try {
+                if (event.condition()) {
+                    console.log(`Story event triggered: ${id}`);
+                    event.action();
+                    event.triggered = true;
+                }
+            } catch (error) {
+                console.warn(`Error checking story event ${id}:`, error);
+                // Continue to next event instead of breaking
+            }
+        }
+    }
+    
+    // Check achievement triggers
+    for (const [id, achievement] of Object.entries(gameState.progression.achievements)) {
+        // Skip already achieved achievements
+        if (gameState.progression.achievements && 
+            gameState.progression.achievements[id] && 
+            gameState.progression.achievements[id].achieved) {
+            continue;
+        }
+        
+        try {
+            if (achievement.condition()) {
+                unlockAchievement(id);
+            }
+        } catch (error) {
+            console.warn(`Error checking achievement ${id}:`, error);
+            // Continue to next achievement instead of breaking
         }
     }
 }

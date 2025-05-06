@@ -80,18 +80,75 @@ p {
     z-index: 1;
 }
 
+/* Resources Panel */
 .resources-panel {
     background-color: var(--panel-color);
     border: 1px solid var(--primary-color);
     border-radius: 5px;
     padding: 1rem;
     box-shadow: var(--neon-glow);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+/* Add indicator for scrolled state */
+.resources-panel::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%) scale(0);
+    width: 20px;
+    height: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff9900'%3E%3Cpath d='M16,12V4H17V2H7V4H8V12L6,14V16H18V14L16,12M10,4H14V4H10V4M13.5,14.5H10.5V12.5H13.5V14.5Z'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.resources-panel.scrolled::after {
+    transform: translateY(-50%) scale(1);
+    opacity: 0.8;
+}
+
+/* Scrolled state styling */
+.resources-panel.scrolled {
+    border-radius: 0 0 5px 5px;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
+    border-top: none;
+    border-left: 1px solid var(--accent-color);
+    border-right: 1px solid var(--accent-color);
+    border-bottom: 1px solid var(--accent-color);
+}
+
+/* Make the resources more compact when scrolled */
+.resources-panel.scrolled .resources-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.5rem;
+}
+
+.resources-panel.scrolled h2 {
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.resources-panel.scrolled .resource-container {
+    padding: 0.3rem;
+}
+
+.resources-panel.scrolled .resource-value {
+    font-size: 1.2rem;
 }
 
 .resources-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
+    transition: all 0.3s ease;
 }
 
 .resource-container {
@@ -2586,4 +2643,46 @@ p {
 
 .audio-button.muted {
     color: var(--danger-color);
+}
+
+/* Multiplier Button Styling */
+.multiplier-button {
+    background-color: rgba(255, 153, 0, 0.3) !important;
+    border: 1px solid var(--accent-color) !important;
+    position: relative;
+    animation: pulse-multiplier 2s infinite;
+    font-weight: bold;
+}
+
+.multiplier-button:hover {
+    background-color: var(--accent-color) !important;
+    box-shadow: 0 0 5px var(--accent-color), 0 0 10px var(--accent-color);
+    border-color: white !important;
+    color: black !important;
+}
+
+.multiplier-hint {
+    color: var(--accent-color);
+    font-size: 0.9rem;
+    margin-left: 0.5rem;
+    font-style: italic;
+    animation: fade-in-out 2s infinite;
+}
+
+@keyframes pulse-multiplier {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 153, 0, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 5px rgba(255, 153, 0, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 153, 0, 0);
+    }
+}
+
+@keyframes fade-in-out {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
 }
