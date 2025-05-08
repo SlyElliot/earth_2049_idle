@@ -151,7 +151,7 @@ let gameState = {
             completed: false,
             requires: [],
             icon: "🔒",
-            position: { x: 50, y: 10 } // Position in % from top-left
+            position: { x: 50, y: 5 } // Position in % from top-left
         },
         underworldContacts: {
             name: "Underworld Contacts",
@@ -161,7 +161,7 @@ let gameState = {
             completed: false,
             requires: [],
             icon: "🤝",
-            position: { x: 80, y: 10 }
+            position: { x: 85, y: 5 }
         },
         basicAutomation: {
             name: "Basic Automation",
@@ -171,7 +171,7 @@ let gameState = {
             completed: false,
             requires: [],
             icon: "⚙️",
-            position: { x: 20, y: 10 }
+            position: { x: 15, y: 5 }
         },
         recruitmentAlgorithms: {
             name: "Recruitment Algorithms",
@@ -181,7 +181,7 @@ let gameState = {
             completed: false,
             requires: ["basicAutomation"],
             icon: "👥",
-            position: { x: 20, y: 25 }
+            position: { x: 10, y: 25 }
         },
         dataMining: {
             name: "Data Mining",
@@ -191,7 +191,7 @@ let gameState = {
             completed: false,
             requires: ["basicAutomation"],
             icon: "📊",
-            position: { x: 35, y: 25 }
+            position: { x: 25, y: 25 }
         },
         energyManagement: {
             name: "Energy Management",
@@ -201,7 +201,7 @@ let gameState = {
             completed: false,
             requires: ["basicAutomation"],
             icon: "⚡",
-            position: { x: 5, y: 25 }
+            position: { x: 40, y: 25 }
         },
         massMediaManipulation: {
             name: "Mass Media Manipulation",
@@ -212,7 +212,7 @@ let gameState = {
             completed: false,
             requires: ["recruitmentAlgorithms"],
             icon: "📺",
-            position: { x: 20, y: 40 }
+            position: { x: 10, y: 45 }
         },
         advancedDataMining: {
             name: "Advanced Data Mining",
@@ -223,7 +223,7 @@ let gameState = {
             completed: false,
             requires: ["dataMining"],
             icon: "💾",
-            position: { x: 35, y: 40 }
+            position: { x: 25, y: 45 }
         },
         secureEncryption: {
             name: "Secure Encryption",
@@ -243,7 +243,7 @@ let gameState = {
             completed: false,
             requires: ["underworldContacts"],
             icon: "💰",
-            position: { x: 80, y: 25 }
+            position: { x: 85, y: 25 }
         },
         neuralHacking: {
             name: "Neural Hacking",
@@ -253,7 +253,7 @@ let gameState = {
             completed: false,
             requires: ["secureEncryption", "advancedDataMining"],
             icon: "🧠",
-            position: { x: 50, y: 40 }
+            position: { x: 50, y: 45 }
         },
         roboticAutomation: {
             name: "Robotic Automation",
@@ -263,7 +263,7 @@ let gameState = {
             completed: false,
             requires: ["energyManagement"],
             icon: "🤖",
-            position: { x: 5, y: 40 }
+            position: { x: 40, y: 45 }
         },
         viralNetworking: {
             name: "Viral Networking",
@@ -273,7 +273,7 @@ let gameState = {
             completed: false,
             requires: ["massMediaManipulation"],
             icon: "🦠",
-            position: { x: 20, y: 55 }
+            position: { x: 10, y: 65 }
         },
         quantumComputing: {
             name: "Quantum Computing",
@@ -283,7 +283,7 @@ let gameState = {
             completed: false,
             requires: ["advancedDataMining", "neuralHacking"],
             icon: "🔬",
-            position: { x: 50, y: 55 }
+            position: { x: 40, y: 65 }
         },
         aiCoordination: {
             name: "AI Coordination",
@@ -294,7 +294,7 @@ let gameState = {
             completed: false,
             requires: ["neuralHacking", "viralNetworking", "roboticAutomation"],
             icon: "🧩",
-            position: { x: 35, y: 70 }
+            position: { x: 25, y: 85 }
         },
         mindControlDisruption: {
             name: "Mind Control Disruption",
@@ -304,7 +304,7 @@ let gameState = {
             completed: false,
             requires: ["neuralHacking"],
             icon: "📡",
-            position: { x: 65, y: 55 }
+            position: { x: 70, y: 65 }
         },
         decentralizedOps: {
             name: "Decentralized Operations",
@@ -314,7 +314,7 @@ let gameState = {
             completed: false,
             requires: ["blackMarketExpansion", "neuralHacking"],
             icon: "🌐",
-            position: { x: 80, y: 40 }
+            position: { x: 70, y: 45 }
         },
         quantumEncryption: {
             name: "Quantum Encryption",
@@ -324,7 +324,7 @@ let gameState = {
             completed: false,
             requires: ["quantumComputing"],
             icon: "🔏",
-            position: { x: 50, y: 85 }
+            position: { x: 55, y: 85 }
         },
         collectiveConsciousness: {
             name: "Collective Consciousness",
@@ -334,7 +334,7 @@ let gameState = {
             completed: false,
             requires: ["mindControlDisruption", "aiCoordination", "quantumEncryption"],
             icon: "👁️",
-            position: { x: 50, y: 95 }
+            position: { x: 40, y: 95 }
         }
     },
     // Districts / Territories (GDD - Replaces Districts)
@@ -601,14 +601,34 @@ document.addEventListener("DOMContentLoaded", function initGame() {
             dialogueNext.addEventListener("click", nextDialogue);
         }
         
+        // Initialize tab switching to ensure tech tree renders properly
+        document.querySelectorAll('.tab').forEach(tabButton => {
+            tabButton.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                
+                // When switching to tech tree tab, ensure connections are drawn
+                if (tabId === 'techTree-tab') {
+                    // Use a small timeout to ensure DOM is ready
+                    setTimeout(() => {
+                        updateTechTreeDisplay();
+                    }, 50);
+                }
+            });
+        });
+        
         // Initial display updates
         updateResourceDisplay();
         updateBoostsDisplay();
         updateItemsDisplay();
-        updateTechTreeDisplay();
         updateTerritoriesDisplay();
         updateMissionsDisplay();
         updateAllDisplays();
+        
+        // Specifically ensure tech tree display is updated after a slight delay
+        // to allow the DOM to be fully rendered
+        setTimeout(() => {
+            updateTechTreeDisplay();
+        }, 200);
         
         // Update tech button cost
         const techPointsCost = document.getElementById("techPoints-cost");
@@ -1310,7 +1330,7 @@ function buyItem(itemId) {
         
         // Calculate cost for each item being purchased
         for (let i = 0; i < itemsToBuy; i++) {
-            const itemCost = item.baseCost[resource] * Math.pow(item.costMultiplier, item.count + i);
+            const itemCost = item.baseCost[resource] * Math.pow(item.costMultiplier || 1, item.count + i);
             resourceTotalCost += itemCost;
         }
         
@@ -1534,7 +1554,7 @@ function activateTerritory(territoryId) {
 
 // Function to switch tabs
 function switchTab(tabId) {
-    console.log(`DEBUG: Switching to tab: ${tabId}`); // ADDED
+    console.log(`DEBUG: Switching to tab: ${tabId}`);
     // Hide all tab content
     const tabContents = document.querySelectorAll(".tab-content");
     tabContents.forEach(content => {
@@ -1551,9 +1571,9 @@ function switchTab(tabId) {
     const selectedTabContent = document.getElementById(tabId);
     if (selectedTabContent) {
         selectedTabContent.style.display = "block";
-        console.log(`DEBUG: Displaying content for ${tabId}`); // ADDED
+        console.log(`DEBUG: Displaying content for ${tabId}`);
     } else {
-        console.error(`DEBUG: Content element not found for ${tabId}`); // ADDED
+        console.error(`DEBUG: Content element not found for ${tabId}`);
     }
 
     // Activate the selected tab button
@@ -1561,13 +1581,31 @@ function switchTab(tabId) {
     if (selectedTabButton) {
         selectedTabButton.classList.add("active");
     } else {
-        console.error(`DEBUG: Tab button not found for ${tabId}`); // ADDED
+        console.error(`DEBUG: Tab button not found for ${tabId}`);
     }
 
     // Also hide achievements section when switching main tabs
     const achievementsSection = document.getElementById("achievements-section");
     if (achievementsSection) {
         achievementsSection.style.display = "none";
+    }
+    
+    // Special handling for tech tree tab to ensure connections are drawn properly
+    if (tabId === "techTree-tab") {
+        console.log("Switching to Tech Tree tab");
+        // Clear and force redraw of tech tree
+        const techTreeContainer = document.getElementById("tech-tree-container");
+        if (techTreeContainer) {
+            techTreeContainer.innerHTML = '';
+        }
+        
+        // Use a small timeout to make sure DOM is ready
+        setTimeout(() => {
+            console.log("Refreshing tech tree connections after tab switch");
+            updateTechTreeDisplay();
+            // Debug the tech tree after updating
+            debugTechTree();
+        }, 100);
     }
 }
 
@@ -1977,6 +2015,10 @@ function updateItemsDisplay() {
 // Update Tech Tree display
 function updateTechTreeDisplay() {
     console.log("DEBUG: updateTechTreeDisplay called.");
+    
+    // Call our debug function to identify issues
+    debugTechTree();
+    
     const techTreeContainer = document.getElementById("tech-tree-container");
     if (!techTreeContainer) {
         console.error("DEBUG: tech-tree-container element not found!");
@@ -2038,46 +2080,11 @@ function updateTechTreeDisplay() {
         }
     }
     
-    // Second pass: Draw connections first (so they're behind the nodes)
-    for (const connection of connections) {
-        const fromTech = gameState.techTree[connection.from];
-        const toTech = gameState.techTree[connection.to];
-        
-        if (!fromTech || !toTech || !fromTech.position || !toTech.position) {
-            continue;
-        }
-        
-        // Calculate connection coordinates
-        const fromX = fromTech.position.x;
-        const fromY = fromTech.position.y;
-        const toX = toTech.position.x;
-        const toY = toTech.position.y;
-        
-        // Calculate line properties
-        const dx = toX - fromX;
-        const dy = toY - fromY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        
-        // Create connection element
-        const connectionElement = document.createElement("div");
-        connectionElement.classList.add("tech-connection");
-        if (connection.isCompleted) {
-            connectionElement.classList.add("completed");
-        }
-        
-        // Position and rotate connection
-        connectionElement.style.left = `${fromX}%`;
-        connectionElement.style.top = `${fromY}%`;
-        connectionElement.style.width = `${distance}%`;
-        connectionElement.style.transform = `rotate(${angle}deg)`;
-        
-        techTreeContainer.appendChild(connectionElement);
-    }
+    // Fourth pass: Redraw connections to attach to connection points
+    techTreeContainer.innerHTML = ""; // Clear and redraw everything
     
-    // Third pass: Draw the nodes
-    window.selectedTechId = null;
-    
+    // First create all nodes but don't append them yet
+    const nodeElements = [];
     for (const node of nodes) {
         const tech = node.tech;
         
@@ -2099,7 +2106,7 @@ function updateTechTreeDisplay() {
         if (tech.position) {
             nodeElement.style.left = `${tech.position.x}%`;
             nodeElement.style.top = `${tech.position.y}%`;
-            nodeElement.style.transform = "translate(-50%, -50%)"; // Center the node
+            // Transform for centering is now in the CSS
         }
         
         // Add icon
@@ -2121,6 +2128,9 @@ function updateTechTreeDisplay() {
         descElement.textContent = shortDesc;
         nodeElement.appendChild(descElement);
         
+        // Add connection points to the node
+        addConnectionPoints(nodeElement);
+        
         // Add click event
         nodeElement.addEventListener("click", () => {
             // Select this tech
@@ -2137,8 +2147,29 @@ function updateTechTreeDisplay() {
             updateTechDetailPanel(node.id);
         });
         
-        techTreeContainer.appendChild(nodeElement);
+        // Store for later appending
+        nodeElements.push({ element: nodeElement, id: node.id });
     }
+    
+    // Now draw all connections first
+    for (const connection of connections) {
+        const fromTech = gameState.techTree[connection.from];
+        const toTech = gameState.techTree[connection.to];
+        
+        if (!fromTech || !toTech || !fromTech.position || !toTech.position) {
+            continue;
+        }
+        
+        drawTechConnection(connection, fromTech, toTech, techTreeContainer, connection.isCompleted);
+    }
+    
+    // Finally, append all node elements on top of connections
+    for (const node of nodeElements) {
+        techTreeContainer.appendChild(node.element);
+    }
+    
+    // Debug info after rendering
+    console.log(`DEBUG: Rendered ${nodeElements.length} tech nodes and ${connections.length} connections`);
 }
 
 // Update tech detail panel
@@ -4272,4 +4303,198 @@ function initRandomizer() {
         console.error("Failed to apply randomizer to game state");
     }
 }
+
+// Helper function to draw a connection between tech nodes
+function drawTechConnection(connection, fromTech, toTech, container, isCompleted) {
+    // Skip specific diagonal connections that cause visual issues
+    const skipConnections = [
+        // Skip the diagonal connection from roboticAutomation to aiCoordination
+        {from: 'roboticAutomation', to: 'aiCoordination'},
+        // Skip the diagonal connection from neuralHacking to aiCoordination
+        {from: 'neuralHacking', to: 'aiCoordination'}
+    ];
+    
+    // Check if this connection should be skipped
+    for (const skipConn of skipConnections) {
+        if (connection.from === skipConn.from && connection.to === skipConn.to) {
+            console.log(`Skipping problematic diagonal connection: ${connection.from} to ${connection.to}`);
+            return; // Skip drawing this connection
+        }
+    }
+    
+    // The final 6 nodes that need special SVG handling
+    const specialNodes = ['viralNetworking', 'quantumComputing', 'mindControlDisruption', 
+                        'aiCoordination', 'quantumEncryption', 'collectiveConsciousness'];
+    
+    // Check if both nodes in this connection are special nodes
+    const isSpecialConnection = specialNodes.includes(connection.from) && specialNodes.includes(connection.to);
+    
+    // Center positions for each node
+    const fromX = fromTech.position.x;
+    const fromY = fromTech.position.y;
+    const toX = toTech.position.x;
+    const toY = toTech.position.y;
+    
+    // Draw special connections using SVG for perfect alignment
+    if (isSpecialConnection) {
+        // Create SVG element for a perfect line connection
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        
+        // Set SVG to cover entire container area
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("height", "100%");
+        svg.style.position = "absolute";
+        svg.style.left = "0";
+        svg.style.top = "0";
+        svg.style.pointerEvents = "none";
+        svg.style.zIndex = "1"; // Between nodes and regular connections
+        
+        // Create line element
+        const line = document.createElementNS(svgNS, "line");
+        line.setAttribute("x1", `${fromX}%`);
+        line.setAttribute("y1", `${fromY}%`);
+        line.setAttribute("x2", `${toX}%`);
+        line.setAttribute("y2", `${toY}%`);
+        
+        // Set line styling
+        line.setAttribute("stroke", isCompleted ? "#00ff00" : "#00ffff");
+        line.setAttribute("stroke-width", "8");
+        line.setAttribute("stroke-opacity", "0.7");
+        
+        // Add glow effect
+        const glowColor = isCompleted ? "rgba(0, 255, 0, 0.8)" : "rgba(0, 255, 255, 0.8)";
+        line.setAttribute("filter", "drop-shadow(0 0 8px " + glowColor + ")");
+        
+        // Add line to SVG and SVG to container
+        svg.appendChild(line);
+        container.appendChild(svg);
+        
+        console.log(`Created SVG line for special connection: ${connection.from} to ${connection.to}`);
+        return; // Skip the regular connection drawing
+    }
+    
+    // For regular connections, continue with the original CSS transform method
+    // Calculate direct line between centers
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    let baseDistance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Adaptive extension factor
+    let extensionFactor = 1.2; // Base extension (20% longer)
+    
+    // For longer distances, gradually reduce the extension factor
+    if (baseDistance > 30) {
+        extensionFactor = 1.0 + (0.2 * (40 / baseDistance));
+    }
+    
+    // Apply extension factor to get the distance
+    const distance = baseDistance * extensionFactor;
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    
+    // Create connection element
+    const connectionElement = document.createElement("div");
+    connectionElement.classList.add("tech-connection");
+    if (isCompleted) {
+        connectionElement.classList.add("completed");
+    }
+    
+    // Position and rotate connection
+    connectionElement.style.left = `${fromX}%`;
+    connectionElement.style.top = `${fromY}%`;
+    connectionElement.style.width = `${distance}%`;
+    connectionElement.style.transform = `rotate(${angle}deg)`;
+    
+    container.appendChild(connectionElement);
+    
+    console.log(`Created CSS connection: ${connection.from} to ${connection.to}, distance=${baseDistance.toFixed(1)}, final=${distance.toFixed(1)}`);
+}
+
+// Helper function to add connection points to a tech node
+function addConnectionPoints(nodeElement) {
+    // Add connection points in four directions
+    const directions = ['input', 'output', 'top', 'bottom'];
+    
+    directions.forEach(direction => {
+        const connectionPoint = document.createElement('div');
+        connectionPoint.classList.add('tech-node-connection-point', direction);
+        nodeElement.appendChild(connectionPoint);
+    });
+}
+
+// Debug function to check tech tree problems
+function debugTechTree() {
+    console.log("=== TECH TREE DEBUG ===");
+    
+    // Check if tech-tree-container exists
+    const techTreeContainer = document.getElementById("tech-tree-container");
+    console.log("Tech tree container exists:", !!techTreeContainer);
+    
+    if (techTreeContainer) {
+        console.log("Container dimensions:", 
+            "width=" + techTreeContainer.offsetWidth + "px", 
+            "height=" + techTreeContainer.offsetHeight + "px");
+        console.log("Container styles:", 
+            "display=" + getComputedStyle(techTreeContainer).display,
+            "position=" + getComputedStyle(techTreeContainer).position,
+            "overflow=" + getComputedStyle(techTreeContainer).overflow);
+    }
+    
+    // Check gameState.techTree
+    console.log("gameState exists:", !!gameState);
+    console.log("gameState.techTree exists:", !!(gameState && gameState.techTree));
+    
+    if (gameState && gameState.techTree) {
+        const techCount = Object.keys(gameState.techTree).length;
+        console.log("Number of tech entries:", techCount);
+        
+        // Check a sample tech entry
+        const sampleTechId = Object.keys(gameState.techTree)[0];
+        const sampleTech = gameState.techTree[sampleTechId];
+        console.log("Sample tech entry:", sampleTechId, sampleTech);
+        
+        // Check if position properties exist
+        console.log("Sample tech has position:", !!(sampleTech && sampleTech.position));
+        if (sampleTech && sampleTech.position) {
+            console.log("Position values:", sampleTech.position.x, sampleTech.position.y);
+        }
+    }
+    
+    // Check tech nodes
+    const techNodes = document.querySelectorAll(".tech-node");
+    console.log("Number of tech nodes rendered:", techNodes.length);
+    
+    if (techNodes.length > 0) {
+        const sampleNode = techNodes[0];
+        console.log("Sample node styles:", 
+            "left=" + sampleNode.style.left, 
+            "top=" + sampleNode.style.top,
+            "display=" + getComputedStyle(sampleNode).display,
+            "position=" + getComputedStyle(sampleNode).position,
+            "visibility=" + getComputedStyle(sampleNode).visibility);
+    }
+    
+    console.log("=== END TECH TREE DEBUG ===");
+}
+
+// Add an event listener for window resize to fix tech connections
+window.addEventListener('resize', function() {
+    // Only update if we're on the tech tree tab
+    const techTreeTab = document.getElementById('techTree-tab');
+    if (techTreeTab && techTreeTab.classList.contains('active')) {
+        updateTechTreeDisplay();
+    }
+});
+
+// Add window load event to ensure tech tree is properly drawn after all resources load
+window.addEventListener('load', function() {
+    // Update tech tree after window fully loads (all resources)
+    const techTreeTab = document.getElementById('techTree-tab');
+    if (techTreeTab && techTreeTab.classList.contains('active')) {
+        console.log("Window loaded, updating tech tree connections");
+        setTimeout(() => {
+            updateTechTreeDisplay();
+        }, 100);
+    }
+});
         
