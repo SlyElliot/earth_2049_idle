@@ -479,17 +479,38 @@ let gameState = {
     missions: {
         activeMission: null,
         missionStartTime: null,
+        queue: [], // Queued missions waiting to be started
+        completedMissions: [], // Track missions that have been completed
         availableMissions: {
-            // Minimal structure for testing syntax
+            // Example mission structure
             spreadRumors: {
                 id: "spreadRumors",
                 name: "Spread Rumors",
-                desc: "Gain minor influence.",
-                cost: { credits: 20 },
-                duration: 30,
-                reward: { influence: 5 },
+                desc: "Gain minor influence by spreading rumors about GigaCorp.",
+                cost: { followers: 5, credits: 20 }, // Now requires followers to start
+                duration: 30, // Seconds for testing - would be longer in real game
+                reward: { influence: 5, credits: 50 },
+                factionId: "Hackers", // Associated faction
+                reputationGain: 3, // Reputation points gained with faction
                 requiresTech: [],
-                unlocked: true
+                unlocked: true,
+                dialogueId: "mission_spreadRumors", // ID of the dialogue to show when accepting
+                completionDialogueId: "mission_spreadRumors_complete" // Dialogue shown on completion
+            },
+            // Additional test mission
+            dataHeist: {
+                id: "dataHeist",
+                name: "Corporate Data Heist",
+                desc: "Infiltrate GigaCorp's database and extract valuable intel.",
+                cost: { followers: 15, credits: 100, energy: 10 },
+                duration: 60, // 1 minute for testing
+                reward: { techPoints: 50, credits: 200, influence: 20 },
+                factionId: "Hackers",
+                reputationGain: 5,
+                requiresTech: ["basicEncryption"],
+                unlocked: true,
+                dialogueId: "mission_dataHeist",
+                completionDialogueId: "mission_dataHeist_complete"
             }
         }
     },
@@ -581,6 +602,9 @@ document.addEventListener("DOMContentLoaded", function initGame() {
         };
         gameState.loopCount = gameState.loopCount || 0;
         gameState.playerId = gameState.playerId || "player" + Math.floor(Math.random() * 10000);
+        
+        // Load missions from CSV file
+        loadMissionsFromCSV();
         
         // Initialize background music
         initBackgroundMusic();
@@ -2841,7 +2865,17 @@ function gameLoop() {
         if (mission) { // Check if mission exists before accessing duration
             const elapsedTime = (now - gameState.missions.missionStartTime) / 1000;
             if (elapsedTime >= mission.duration) {
-                completeMission(gameState.missions.activeMission);
+                // Mission is complete but waiting for player to collect rewards
+                // Only notify once when mission first completes
+                if (!mission.notifiedComplete) {
+                    addLogMessage(`Mission "${mission.name}" is complete! Collect your rewards in the Missions tab.`);
+                    playSound("sounds/mission_complete.wav");
+                    // Set flag to prevent repeated notifications
+                    mission.notifiedComplete = true;
+                    
+                    // Update UI to show mission is complete
+                    updateMissionsDisplay();
+                }
             } else {
                 // Update mission progress display less frequently if performance is an issue
                 if (Date.now() % 1000 < 100) { // Update roughly once per second
@@ -3083,220 +3117,436 @@ function formatTime(seconds) {
 }
 
 function startMission(missionId) {
-    console.log(`DEBUG: Attempting to start mission: ${missionId}`);
+    console.log(`Starting mission: ${missionId}`);
     if (!gameState || !gameState.missions) {
-        console.error("DEBUG: gameState or gameState.missions is not defined!");
+        console.error("gameState or gameState.missions is not defined!");
         return;
     }
 
+    // Check if another mission is already active
     if (gameState.missions.activeMission) {
-        addLogMessage("Cannot start a new mission while another is in progress.");
+        addLogMessage("You must complete your current mission before starting a new one.");
+        return;
+    }
+
+    // Convert IDs like "M-001" to the proper format if needed
+    if (!missionId.startsWith('M-') && !isNaN(parseInt(missionId))) {
+        missionId = `M-${missionId.toString().padStart(3, '0')}`;
+    }
+
+    // Check if mission exists and is in queue
+    if (!gameState.missions.availableMissions[missionId]) {
+        console.error(`Mission not found: ${missionId}`);
+        return;
+    }
+
+    if (!gameState.missions.queue || !gameState.missions.queue.includes(missionId)) {
+        console.error(`Mission ${missionId} is not in queue!`);
         return;
     }
 
     const mission = gameState.missions.availableMissions[missionId];
-    if (!mission) {
-        addLogMessage(`Mission with ID ${missionId} not found.`);
-        console.error(`DEBUG: Mission not found: ${missionId}`);
-        return;
-    }
-    if (!mission.unlocked) {
-         addLogMessage("Mission not available or locked.");
-         return;
-    }
 
-    // Check prerequisites (e.g., tech)
-    let prereqsMet = true;
-    if (mission.requiresTech && mission.requiresTech.length > 0) {
-        for (const reqId of mission.requiresTech) {
-            if (!gameState.techTree || !gameState.techTree[reqId] || !gameState.techTree[reqId].completed) {
-                prereqsMet = false;
-                addLogMessage(`Requires Tech: ${gameState.techTree[reqId]?.name || reqId}`);
-                break;
-            }
-        }
-    }
-    // Add checks for other prerequisites like items if needed
-
-    if (!prereqsMet) {
-        addLogMessage(`Prerequisites not met for mission: ${mission.name}.`);
-        return;
-    }
-
-    // Check cost
-    const cost = mission.cost;
-    let canAfford = true;
-    if (cost) { // Check if cost object exists
-        for (const resource in cost) {
-            if (!gameState.resources || gameState.resources[resource] === undefined || gameState.resources[resource] < cost[resource]) {
-                canAfford = false;
-                break;
-            }
-        }
-    } else {
-        console.warn(`DEBUG: Mission ${missionId} has no cost defined.`);
-    }
-
-    if (canAfford) {
-        // Deduct cost
-        if (cost) {
-            for (const resource in cost) {
-                gameState.resources[resource] -= cost[resource];
+    // Check if player has enough resources to start the mission
+    if (mission.cost) {
+        for (const resource in mission.cost) {
+            if (!gameState.resources[resource] || gameState.resources[resource] < mission.cost[resource]) {
+                addLogMessage(`Not enough ${resource} to start "${mission.name}".`);
+                return;
             }
         }
 
-        // Start mission
-        gameState.missions.activeMission = missionId;
-        gameState.missions.missionStartTime = Date.now();
-        addLogMessage(`Mission started: ${mission.name}.`);
-        playSound("sounds/click.wav"); // Consider a different sound for missions
-
-        updateResourceDisplay();
-        updateMissionsDisplay(); // Refresh mission display to show progress
-        updateButtonStates(); // Update button states immediately
-    } else {
-        addLogMessage(`Insufficient resources to start mission: ${mission.name}. Cost: ${formatResourceList(cost)}`);
+        // Deduct the cost
+        for (const resource in mission.cost) {
+            gameState.resources[resource] -= mission.cost[resource];
+        }
     }
+
+    // Remove mission from queue
+    gameState.missions.queue = gameState.missions.queue.filter(id => id !== missionId);
+
+    // Set as active mission
+    gameState.missions.activeMission = missionId;
+    gameState.missions.missionStartTime = Date.now();
+    
+    // Reset notification flags
+    mission.notifiedComplete = false;
+    mission.notifiedInTab = false;
+
+    // Add log message
+    addLogMessage(`Started mission: "${mission.name}". ${formatTime(mission.duration)} until completion.`);
+    
+    if (mission.cost && mission.cost.followers) {
+        addLogMessage(`${mission.cost.followers} followers have been committed to this mission.`);
+    }
+
+    // Update the display
+    updateResourceDisplay();
+    updateMissionsDisplay();
+    playSound("sounds/click.wav");
 }
-window.startMission = startMission; // Expose to global scope for onclick
 
 function completeMission(missionId) {
-    console.log(`DEBUG: Completing mission: ${missionId}`);
+    console.log(`Completing mission: ${missionId}`);
     if (!gameState || !gameState.missions) {
-        console.error("DEBUG: gameState or gameState.missions is not defined!");
+        console.error("gameState or gameState.missions is not defined!");
+        return;
+    }
+
+    // Convert IDs like "M-001" to the proper format if needed
+    if (!missionId.startsWith('M-') && !isNaN(parseInt(missionId))) {
+        missionId = `M-${missionId.toString().padStart(3, '0')}`;
+    }
+
+    // Check if this is the active mission
+    if (gameState.missions.activeMission !== missionId) {
+        addLogMessage("That mission is not currently active.");
         return;
     }
 
     const mission = gameState.missions.availableMissions[missionId];
     if (!mission) {
-        console.error(`DEBUG: Mission ${missionId} not found during completion.`);
-        // Clear potentially stuck active mission state
-        gameState.missions.activeMission = null;
-        gameState.missions.missionStartTime = null;
-        updateMissionsDisplay();
+        console.error(`Mission not found: ${missionId}`);
         return;
     }
 
-    // Grant rewards
-    let rewardMessage = "Mission completed: " + mission.name + ". Rewards: ";
-    const rewardsGained = [];
-    if (mission.reward) { // Check if reward object exists
-        for (const resource in mission.reward) {
-            if (gameState.resources[resource] !== undefined) {
-                gameState.resources[resource] += mission.reward[resource];
-                rewardsGained.push(`${formatNumber(mission.reward[resource])} ${resource}`);
-            } else {
-                console.warn(`DEBUG: Unknown resource ${resource} in reward for mission ${missionId}`);
-            }
-        }
-    } else {
-        console.warn(`DEBUG: Mission ${missionId} has no reward defined.`);
+    // Check if the mission is actually complete
+    const elapsedTime = (Date.now() - gameState.missions.missionStartTime) / 1000;
+    if (elapsedTime < mission.duration) {
+        addLogMessage(`Mission "${mission.name}" is still in progress. ${formatTime(mission.duration - elapsedTime)} remaining.`);
+        return;
     }
-    rewardMessage += rewardsGained.join(", ") || "None";
-    addLogMessage(rewardMessage);
+
+    // Award rewards
+    if (mission.reward) {
+        let rewardMessage = `Mission "${mission.name}" completed! Rewards:`;
+        
+        for (const resource in mission.reward) {
+            if (!gameState.resources[resource]) gameState.resources[resource] = 0;
+            gameState.resources[resource] += mission.reward[resource];
+            rewardMessage += ` ${mission.reward[resource]} ${resource},`;
+        }
+        
+        // Remove trailing comma
+        rewardMessage = rewardMessage.slice(0, -1);
+        addLogMessage(rewardMessage);
+    }
+    
+    // Award faction reputation if applicable
+    if (mission.factionId && mission.reputationGain) {
+        if (!gameState.factions) gameState.factions = {};
+        if (!gameState.factions[mission.factionId]) gameState.factions[mission.factionId] = {
+            reputation: 0,
+            level: 0
+        };
+        
+        // Award reputation
+        gameState.factions[mission.factionId].reputation += mission.reputationGain;
+        addLogMessage(`+${mission.reputationGain} reputation with ${mission.factionId} faction.`);
+    }
+
+    // Show completion dialogue if it exists
+    if (mission.completionDialogueId && window.dialogues && window.dialogues[mission.completionDialogueId]) {
+        // Add a small delay before showing dialogue
+        setTimeout(() => {
+            showDialogue(mission.completionDialogueId);
+        }, 1000);
+    }
+
+    // Add to completed missions
+    if (!gameState.missions.completedMissions) {
+        gameState.missions.completedMissions = [];
+    }
+    gameState.missions.completedMissions.push(missionId);
 
     // Clear active mission
     gameState.missions.activeMission = null;
     gameState.missions.missionStartTime = null;
 
-    // Update UI
+    // Show notification
+    showNotification("Mission Complete!", `"${mission.name}" has been completed successfully.`);
+    
+    // Update displays
     updateResourceDisplay();
-    updateMissionsDisplay(); // Refresh mission display
-    updateButtonStates(); // Update button states immediately
-    // Potentially trigger other events or unlock next missions
+    updateMissionsDisplay();
+    playSound("sounds/mission_complete.wav");
 }
 
 function updateMissionsDisplay() {
-    // console.log("DEBUG: updateMissionsDisplay called."); // Reduce log spam
     const missionsList = document.getElementById("missions-list");
     if (!missionsList) {
-        // console.error("DEBUG: missions-list element not found!"); // Reduce log spam
-        return; // Don't proceed if the element isn't there
+        console.error("missions-list element not found!");
+        return;
     }
+    
     if (!gameState || !gameState.missions) {
-        // console.error("DEBUG: gameState or missions not ready for display."); // Reduce log spam
         missionsList.innerHTML = "<p>Loading missions...</p>";
         return;
     }
 
     missionsList.innerHTML = ""; // Clear previous list
 
+    // Get current mission state
     const activeMissionId = gameState.missions.activeMission;
     const missionStartTime = gameState.missions.missionStartTime;
+    const queuedMissions = gameState.missions.queue || [];
 
-    // Display active mission progress first
-    if (activeMissionId && missionStartTime && gameState.missions.availableMissions && gameState.missions.availableMissions[activeMissionId]) {
+    // If no active mission and no queued missions, show help text
+    if (!activeMissionId && queuedMissions.length === 0) {
+        const helpText = document.createElement("div");
+        helpText.className = "mission-help-text";
+        helpText.innerHTML = `
+            <p>No missions are currently available.</p>
+            <p>Visit faction leaders in the Factions tab to receive missions.</p>
+        `;
+        missionsList.appendChild(helpText);
+        return;
+    }
+
+    // ---------- Display active mission ----------
+    if (activeMissionId && missionStartTime && gameState.missions.availableMissions[activeMissionId]) {
         const mission = gameState.missions.availableMissions[activeMissionId];
         const elapsedTime = (Date.now() - missionStartTime) / 1000; // in seconds
         const remainingTime = Math.max(0, mission.duration - elapsedTime);
-        const progressPercent = Math.min(100, (elapsedTime / mission.duration) * 100);
+        const progressPercent = Math.min(100, (elapsedTime / mission.duration) * 100).toFixed(1);
+        const isComplete = remainingTime <= 0;
+
+        // Create section header
+        const activeHeader = document.createElement("h3");
+        activeHeader.textContent = "Active Mission";
+        activeHeader.className = "mission-section-header";
+        missionsList.appendChild(activeHeader);
 
         const missionDiv = document.createElement("div");
-        missionDiv.className = "mission-item mission-in-progress";
-        missionDiv.innerHTML = `
-            <h4>${mission.name} (In Progress)</h4>
-            <p>${mission.desc}</p>
-            <div class="mission-progress-bar-container">
-                <div class="mission-progress-bar" style="width: ${progressPercent}%;"></div>
+        missionDiv.className = isComplete ? 
+            "mission-item mission-in-progress mission-complete" : 
+            "mission-item mission-in-progress";
+        
+        // If mission is complete, flash the missions tab
+        if (isComplete && !mission.notifiedInTab) {
+            mission.notifiedInTab = true;
+            flashMissionsTab();
+        }
+        
+        let missionHTML = `
+            <div class="mission-header">
+                <h4>${mission.name}</h4>
+                <span class="mission-faction">${mission.factionId || "Independent"}</span>
             </div>
-            <p>Time Remaining: ${formatTime(remainingTime)}</p>
-            <p>Rewards: ${formatResourceList(mission.reward)}</p>
+            <p class="mission-description">${mission.desc}</p>
+            <div class="mission-location">Location: ${mission.location}</div>
+            <div class="mission-progress-container">
+                <div class="mission-progress-bar" style="width: ${progressPercent}%;">
+                    <span class="mission-timer">${isComplete ? "COMPLETE" : formatTime(remainingTime)}</span>
+                </div>
+            </div>
         `;
+        
+        if (isComplete) {
+            missionHTML += `
+                <div class="mission-complete-notice pulse-animation">
+                    <span class="complete-icon">✓</span> Mission Complete!
+                </div>
+                <div class="mission-rewards">
+                    <h5>Rewards:</h5>
+                    <ul>
+                        ${Object.entries(mission.reward).map(([resource, amount]) => 
+                            `<li><span class="resource-icon ${resource}"></span> ${amount} ${resource}</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+                <div class="mission-actions">
+                    <button class="mission-complete-btn glow-effect" onclick="completeMission('${activeMissionId}')">
+                        Collect Rewards
+                    </button>
+                </div>
+            `;
+        } else {
+            missionHTML += `
+                <div class="mission-status">
+                    <span class="mission-followers-committed">
+                        <span class="followers-icon"></span> ${mission.cost.followers || 0} followers committed
+                    </span>
+                </div>
+                <div class="mission-rewards">
+                    <h5>Expected Rewards:</h5>
+                    <ul>
+                        ${Object.entries(mission.reward).map(([resource, amount]) => 
+                            `<li><span class="resource-icon ${resource}"></span> ${amount} ${resource}</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+                <div class="mission-extra">
+                    <p><strong>Bonus:</strong> ${mission.extraSuccess}</p>
+                </div>
+            `;
+        }
+        
+        missionDiv.innerHTML = missionHTML;
         missionsList.appendChild(missionDiv);
-        missionsList.appendChild(document.createElement("hr")); // Separator
+        
+        // Add separator if we have queued missions to display
+        if (queuedMissions.length > 0) {
+            const separator = document.createElement("hr");
+            missionsList.appendChild(separator);
+        }
     }
 
-    // Display available missions
-    if (gameState.missions.availableMissions) {
-        for (const missionId in gameState.missions.availableMissions) {
-            const mission = gameState.missions.availableMissions[missionId];
+    // ---------- Display queued missions ----------
+    if (queuedMissions.length > 0) {
+        // Create section header
+        const queueHeader = document.createElement("h3");
+        queueHeader.textContent = "Mission Queue";
+        queueHeader.className = "mission-section-header";
+        missionsList.appendChild(queueHeader);
 
-            // Unlock mission if requirements met (e.g., tech)
-            // This check should ideally happen less frequently, maybe on tech completion?
-            let prereqsMet = true;
-            if (mission.requiresTech && mission.requiresTech.length > 0) {
-                for (const reqId of mission.requiresTech) {
-                    if (!gameState.techTree || !gameState.techTree[reqId] || !gameState.techTree[reqId].completed) {
-                        prereqsMet = false;
-                        break;
-                    }
-                }
-            }
-            if (prereqsMet) {
-                mission.unlocked = true; // Unlock if not already
-            }
-
-            if (!mission.unlocked) continue; // Skip locked missions
-            if (missionId === activeMissionId) continue; // Skip the active one, already displayed
-
+        queuedMissions.forEach(queuedMissionId => {
+            const mission = gameState.missions.availableMissions[queuedMissionId];
+            if (!mission) return; // Skip if mission not found
+            
             const missionDiv = document.createElement("div");
-            missionDiv.className = "mission-item";
-
-            // Check affordability
-            let canAfford = true;
+            missionDiv.className = "mission-item mission-queued";
+            
+            let canStartMission = true;
+            let startButtonDisabled = "";
+            let startTooltip = "";
+            
+            // Check if player can afford to start mission
             if (mission.cost) {
                 for (const resource in mission.cost) {
-                    if (!gameState.resources || gameState.resources[resource] === undefined || gameState.resources[resource] < mission.cost[resource]) {
-                        canAfford = false;
+                    if (gameState.resources[resource] === undefined || 
+                        gameState.resources[resource] < mission.cost[resource]) {
+                        canStartMission = false;
+                        startButtonDisabled = "disabled";
+                        startTooltip = `Need more ${resource}`;
                         break;
                     }
                 }
             }
-
+            
+            // Check if another mission is active
+            if (activeMissionId) {
+                canStartMission = false;
+                startButtonDisabled = "disabled";
+                startTooltip = "Complete active mission first";
+            }
+            
             missionDiv.innerHTML = `
-                <h4>${mission.name}</h4>
-                <p>${mission.desc}</p>
-                <p>Cost: ${formatResourceList(mission.cost)}</p>
-                <p>Duration: ${formatTime(mission.duration)}</p>
-                <p>Rewards: ${formatResourceList(mission.reward)}</p>
-                <button class="neon-button mission-button" onclick="startMission('${missionId}')" ${!canAfford || activeMissionId ? 'disabled' : ''}>
-                    ${activeMissionId ? 'Mission in Progress' : (canAfford ? 'Start Mission' : 'Insufficient Resources')}
-                </button>
+                <div class="mission-header">
+                    <h4>${mission.name}</h4>
+                    <span class="mission-faction">${mission.factionId || "Independent"}</span>
+                </div>
+                <p class="mission-description">${mission.desc}</p>
+                <div class="mission-location">Location: ${mission.location}</div>
+                <div class="mission-requirements">
+                    <div class="mission-duration">
+                        <span class="time-icon"></span> Duration: ${formatTime(mission.duration)}
+                    </div>
+                    <div class="mission-cost">
+                        <span class="cost-list">Cost: ${formatResourceList(mission.cost)}</span>
+                    </div>
+                </div>
+                <div class="mission-rewards">
+                    <h5>Rewards:</h5>
+                    <ul>
+                        ${Object.entries(mission.reward).map(([resource, amount]) => 
+                            `<li><span class="resource-icon ${resource}"></span> ${amount} ${resource}</li>`
+                        ).join('')}
+                        ${mission.reputationGain ? `<li><span class="reputation-icon"></span> +${mission.reputationGain} ${mission.factionId} reputation</li>` : ''}
+                    </ul>
+                </div>
+                <div class="mission-extra">
+                    <p><strong>Bonus:</strong> ${mission.extraSuccess}</p>
+                </div>
+                <div class="mission-actions">
+                    <button class="mission-start-btn" onclick="startMission('${queuedMissionId}')" 
+                        ${startButtonDisabled} title="${startTooltip}">
+                        ${canStartMission ? "Start Mission" : "Cannot Start"}
+                    </button>
+                </div>
             `;
+            
             missionsList.appendChild(missionDiv);
+        });
+    }
+
+    // Set up auto-refresh for mission progress bars
+    if (activeMissionId) {
+        setTimeout(updateMissionProgress, 1000);
+    }
+}
+
+// Update just the mission progress without redrawing everything
+function updateMissionProgress() {
+    if (!gameState || !gameState.missions || !gameState.missions.activeMission) return;
+    
+    const mission = gameState.missions.availableMissions[gameState.missions.activeMission];
+    if (!mission) return;
+    
+    const elapsedTime = (Date.now() - gameState.missions.missionStartTime) / 1000;
+    const remainingTime = Math.max(0, mission.duration - elapsedTime);
+    const progressPercent = Math.min(100, (elapsedTime / mission.duration) * 100).toFixed(1);
+    const isComplete = remainingTime <= 0;
+    
+    // Update progress bar
+    const progressBar = document.querySelector('.mission-progress-bar');
+    const timer = document.querySelector('.mission-timer');
+    
+    if (progressBar) {
+        progressBar.style.width = `${progressPercent}%`;
+        
+        if (isComplete && !progressBar.parentElement.parentElement.classList.contains('mission-complete')) {
+            progressBar.parentElement.parentElement.classList.add('mission-complete');
+            flashMissionsTab();
+            
+            // Replace with complete UI without full redraw
+            const missionItem = progressBar.closest('.mission-item');
+            if (missionItem) {
+                const completeNotice = document.createElement('div');
+                completeNotice.className = 'mission-complete-notice pulse-animation';
+                completeNotice.innerHTML = '<span class="complete-icon">✓</span> Mission Complete!';
+                
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'mission-actions';
+                actionsDiv.innerHTML = `
+                    <button class="mission-complete-btn glow-effect" onclick="completeMission('${gameState.missions.activeMission}')">
+                        Collect Rewards
+                    </button>
+                `;
+                
+                // Find the status div and replace it
+                const statusDiv = missionItem.querySelector('.mission-status');
+                if (statusDiv) {
+                    missionItem.insertBefore(completeNotice, statusDiv);
+                    missionItem.appendChild(actionsDiv);
+                    statusDiv.style.display = 'none';
+                }
+            }
         }
-    } else {
-        missionsList.innerHTML = "<p>No missions available.</p>";
+    }
+    
+    if (timer) {
+        timer.textContent = isComplete ? "COMPLETE" : formatTime(remainingTime);
+    }
+    
+    // Only continue auto-updating if mission is still active
+    if (!isComplete) {
+        setTimeout(updateMissionProgress, 1000);
+    }
+}
+
+// Function to make the missions tab flash when a mission is complete
+function flashMissionsTab() {
+    const missionsTab = document.querySelector('button[data-tab="missions-tab"]');
+    if (missionsTab) {
+        // Add flashing class
+        missionsTab.classList.add('tab-flashing');
+        
+        // Remove flashing when user clicks the tab
+        missionsTab.addEventListener('click', function onTabClick() {
+            missionsTab.classList.remove('tab-flashing');
+            missionsTab.removeEventListener('click', onTabClick);
+        }, { once: true });
     }
 }
 
@@ -4497,4 +4747,725 @@ window.addEventListener('load', function() {
         }, 100);
     }
 });
+
+// Accept a mission through dialogue and add it to queue
+function acceptMission(missionId) {
+    console.log(`Accepting mission: ${missionId}`);
+    if (!gameState || !gameState.missions) {
+        console.error("gameState or gameState.missions is not defined!");
+        return;
+    }
+
+    // Convert IDs like "M-001" to the proper format if needed
+    if (!missionId.startsWith('M-') && !isNaN(parseInt(missionId))) {
+        missionId = `M-${missionId.toString().padStart(3, '0')}`;
+    }
+
+    const mission = gameState.missions.availableMissions[missionId];
+    if (!mission) {
+        addLogMessage(`Mission with ID ${missionId} not found.`);
+        console.error(`Mission not found: ${missionId}`);
+        return;
+    }
+
+    // Check if mission is already in queue
+    if (gameState.missions.queue && gameState.missions.queue.includes(missionId)) {
+        addLogMessage(`Mission "${mission.name}" is already in your queue.`);
+        return;
+    }
+
+    // Check if mission is already active
+    if (gameState.missions.activeMission === missionId) {
+        addLogMessage(`Mission "${mission.name}" is already in progress.`);
+        return;
+    }
+
+    // Initialize queue if needed
+    if (!gameState.missions.queue) {
+        gameState.missions.queue = [];
+    }
+
+    // Add mission to queue and mark as unlocked
+    gameState.missions.queue.push(missionId);
+    mission.unlocked = true;
+    
+    // Show mission acceptance notification
+    addLogMessage(`Mission "${mission.name}" added to your queue.`);
+    showNotification(`New Mission: ${mission.name}`, `Mission added to your queue. Visit the Missions tab to start it.`);
+    
+    // Update the missions display
+    updateMissionsDisplay();
+    
+    // Flash the missions tab to draw attention
+    flashMissionsTab();
+}
+
+// Start a mission from the queue
+function startMission(missionId) {
+    console.log(`Starting mission: ${missionId}`);
+    if (!gameState || !gameState.missions) {
+        console.error("gameState or gameState.missions is not defined!");
+        return;
+    }
+
+    // Check if another mission is already active
+    if (gameState.missions.activeMission) {
+        addLogMessage("You must complete your current mission before starting a new one.");
+        return;
+    }
+
+    // Check if mission exists and is in queue
+    if (!gameState.missions.availableMissions[missionId]) {
+        console.error(`Mission not found: ${missionId}`);
+        return;
+    }
+
+    if (!gameState.missions.queue || !gameState.missions.queue.includes(missionId)) {
+        console.error(`Mission ${missionId} is not in the queue`);
+        return;
+    }
+
+    const mission = gameState.missions.availableMissions[missionId];
+
+    // Check if player can afford the mission cost
+    if (mission.cost) {
+        for (const resource in mission.cost) {
+            if (gameState.resources[resource] === undefined || 
+                gameState.resources[resource] < mission.cost[resource]) {
+                addLogMessage(`Not enough ${resource} to start this mission.`);
+                return;
+            }
+        }
+
+        // Deduct the cost
+        for (const resource in mission.cost) {
+            gameState.resources[resource] -= mission.cost[resource];
+            updateResourceDisplay(); // Update resource display after deduction
+        }
+    }
+
+    // Remove from queue
+    gameState.missions.queue = gameState.missions.queue.filter(id => id !== missionId);
+
+    // Set as active mission
+    gameState.missions.activeMission = missionId;
+    gameState.missions.missionStartTime = Date.now();
+    mission.notifiedComplete = false;
+
+    // Display notification
+    addLogMessage(`Started mission: ${mission.name}`);
+    playSound("sounds/mission_start.wav");
+
+    // Update UI
+    updateMissionsDisplay();
+}
+
+// Complete a mission and get rewards
+function completeMission(missionId) {
+    console.log(`Completing mission: ${missionId}`);
+    if (!gameState || !gameState.missions) {
+        console.error("gameState or gameState.missions is not defined!");
+        return;
+    }
+
+    // Check if this is indeed the active mission
+    if (gameState.missions.activeMission !== missionId) {
+        console.error(`Mission ${missionId} is not the active mission`);
+        return;
+    }
+
+    const mission = gameState.missions.availableMissions[missionId];
+    if (!mission) {
+        console.error(`Mission not found: ${missionId}`);
+        return;
+    }
+
+    // Check if mission is actually complete (timer expired)
+    const elapsedTime = (Date.now() - gameState.missions.missionStartTime) / 1000;
+    if (elapsedTime < mission.duration) {
+        addLogMessage(`Mission ${mission.name} is not yet complete. Please wait.`);
+        return;
+    }
+
+    // Award rewards
+    if (mission.reward) {
+        let rewardText = "Received: ";
+        for (const resource in mission.reward) {
+            // Apply the reward
+            if (gameState.resources[resource] !== undefined) {
+                gameState.resources[resource] += mission.reward[resource];
+                rewardText += `${mission.reward[resource]} ${resource}, `;
+                
+                // Show particle effects for rewards
+                showResourceParticle(resource, mission.reward[resource]);
+            }
+        }
+        rewardText = rewardText.slice(0, -2); // Remove trailing comma and space
+        addLogMessage(rewardText);
+    }
+
+    // Apply faction reputation gain if specified
+    if (mission.factionId && mission.reputationGain && window.aiDirector) {
+        window.aiDirector.applyReputationChange(mission.factionId, mission.reputationGain, gameState);
+        addLogMessage(`Gained ${mission.reputationGain} reputation with ${mission.factionId} faction.`);
+    }
+
+    // Show completion dialogue if available
+    if (mission.completionDialogueId) {
+        showDialogue(mission.completionDialogueId);
+    }
+
+    // Reset active mission
+    gameState.missions.activeMission = null;
+    gameState.missions.missionStartTime = null;
+
+    // Add to completed missions
+    if (!gameState.missions.completedMissions) {
+        gameState.missions.completedMissions = [];
+    }
+    gameState.missions.completedMissions.push(missionId);
+
+    // Display notification
+    addLogMessage(`Mission complete: ${mission.name}`);
+    playSound("sounds/mission_complete.wav");
+
+    // Update UI
+    updateMissionsDisplay();
+    updateResourceDisplay();
+}
+
+// Update the missions tab display
+function updateMissionsDisplay() {
+    const missionsList = document.getElementById("missions-list");
+    if (!missionsList) {
+        console.error("missions-list element not found!");
+        return;
+    }
+    
+    if (!gameState || !gameState.missions) {
+        missionsList.innerHTML = "<p>Loading missions...</p>";
+        return;
+    }
+
+    missionsList.innerHTML = ""; // Clear previous list
+
+    // Get current mission state
+    const activeMissionId = gameState.missions.activeMission;
+    const missionStartTime = gameState.missions.missionStartTime;
+    const queuedMissions = gameState.missions.queue || [];
+
+    // If no active mission and no queued missions, show help text
+    if (!activeMissionId && queuedMissions.length === 0) {
+        const helpText = document.createElement("div");
+        helpText.className = "mission-help-text";
+        helpText.innerHTML = `
+            <p>No missions are currently available.</p>
+            <p>Visit faction leaders in the Factions tab to receive missions.</p>
+        `;
+        missionsList.appendChild(helpText);
+        return;
+    }
+
+    // ---------- Display active mission ----------
+    if (activeMissionId && missionStartTime && gameState.missions.availableMissions[activeMissionId]) {
+        const mission = gameState.missions.availableMissions[activeMissionId];
+        const elapsedTime = (Date.now() - missionStartTime) / 1000; // in seconds
+        const remainingTime = Math.max(0, mission.duration - elapsedTime);
+        const progressPercent = Math.min(100, (elapsedTime / mission.duration) * 100).toFixed(1);
+        const isComplete = remainingTime <= 0;
+
+        // Create section header
+        const activeHeader = document.createElement("h3");
+        activeHeader.textContent = "Active Mission";
+        activeHeader.className = "mission-section-header";
+        missionsList.appendChild(activeHeader);
+
+        const missionDiv = document.createElement("div");
+        missionDiv.className = isComplete ? 
+            "mission-item mission-in-progress mission-complete" : 
+            "mission-item mission-in-progress";
+        
+        // If mission is complete, flash the missions tab
+        if (isComplete && !mission.notifiedInTab) {
+            mission.notifiedInTab = true;
+            flashMissionsTab();
+        }
+        
+        let missionHTML = `
+            <div class="mission-header">
+                <h4>${mission.name}</h4>
+                <span class="mission-faction">${mission.factionId || "Independent"}</span>
+            </div>
+            <p class="mission-description">${mission.desc}</p>
+            <div class="mission-location">Location: ${mission.location}</div>
+            <div class="mission-progress-container">
+                <div class="mission-progress-bar" style="width: ${progressPercent}%;">
+                    <span class="mission-timer">${isComplete ? "COMPLETE" : formatTime(remainingTime)}</span>
+                </div>
+            </div>
+        `;
+        
+        if (isComplete) {
+            missionHTML += `
+                <div class="mission-complete-notice pulse-animation">
+                    <span class="complete-icon">✓</span> Mission Complete!
+                </div>
+                <div class="mission-rewards">
+                    <h5>Rewards:</h5>
+                    <ul>
+                        ${Object.entries(mission.reward).map(([resource, amount]) => 
+                            `<li><span class="resource-icon ${resource}"></span> ${amount} ${resource}</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+                <div class="mission-actions">
+                    <button class="mission-complete-btn glow-effect" onclick="completeMission('${activeMissionId}')">
+                        Collect Rewards
+                    </button>
+                </div>
+            `;
+        } else {
+            missionHTML += `
+                <div class="mission-status">
+                    <span class="mission-followers-committed">
+                        <span class="followers-icon"></span> ${mission.cost.followers || 0} followers committed
+                    </span>
+                </div>
+                <div class="mission-rewards">
+                    <h5>Expected Rewards:</h5>
+                    <ul>
+                        ${Object.entries(mission.reward).map(([resource, amount]) => 
+                            `<li><span class="resource-icon ${resource}"></span> ${amount} ${resource}</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+                <div class="mission-extra">
+                    <p><strong>Bonus:</strong> ${mission.extraSuccess}</p>
+                </div>
+            `;
+        }
+        
+        missionDiv.innerHTML = missionHTML;
+        missionsList.appendChild(missionDiv);
+        
+        // Add separator if we have queued missions to display
+        if (queuedMissions.length > 0) {
+            const separator = document.createElement("hr");
+            missionsList.appendChild(separator);
+        }
+    }
+
+    // ---------- Display queued missions ----------
+    if (queuedMissions.length > 0) {
+        // Create section header
+        const queueHeader = document.createElement("h3");
+        queueHeader.textContent = "Mission Queue";
+        queueHeader.className = "mission-section-header";
+        missionsList.appendChild(queueHeader);
+
+        queuedMissions.forEach(queuedMissionId => {
+            const mission = gameState.missions.availableMissions[queuedMissionId];
+            if (!mission) return; // Skip if mission not found
+            
+            const missionDiv = document.createElement("div");
+            missionDiv.className = "mission-item mission-queued";
+            
+            let canStartMission = true;
+            let startButtonDisabled = "";
+            let startTooltip = "";
+            
+            // Check if player can afford to start mission
+            if (mission.cost) {
+                for (const resource in mission.cost) {
+                    if (gameState.resources[resource] === undefined || 
+                        gameState.resources[resource] < mission.cost[resource]) {
+                        canStartMission = false;
+                        startButtonDisabled = "disabled";
+                        startTooltip = `Need more ${resource}`;
+                        break;
+                    }
+                }
+            }
+            
+            // Check if another mission is active
+            if (activeMissionId) {
+                canStartMission = false;
+                startButtonDisabled = "disabled";
+                startTooltip = "Complete active mission first";
+            }
+            
+            missionDiv.innerHTML = `
+                <div class="mission-header">
+                    <h4>${mission.name}</h4>
+                    <span class="mission-faction">${mission.factionId || "Independent"}</span>
+                </div>
+                <p class="mission-description">${mission.desc}</p>
+                <div class="mission-location">Location: ${mission.location}</div>
+                <div class="mission-requirements">
+                    <div class="mission-duration">
+                        <span class="time-icon"></span> Duration: ${formatTime(mission.duration)}
+                    </div>
+                    <div class="mission-cost">
+                        <span class="cost-list">Cost: ${formatResourceList(mission.cost)}</span>
+                    </div>
+                </div>
+                <div class="mission-rewards">
+                    <h5>Rewards:</h5>
+                    <ul>
+                        ${Object.entries(mission.reward).map(([resource, amount]) => 
+                            `<li><span class="resource-icon ${resource}"></span> ${amount} ${resource}</li>`
+                        ).join('')}
+                        ${mission.reputationGain ? `<li><span class="reputation-icon"></span> +${mission.reputationGain} ${mission.factionId} reputation</li>` : ''}
+                    </ul>
+                </div>
+                <div class="mission-extra">
+                    <p><strong>Bonus:</strong> ${mission.extraSuccess}</p>
+                </div>
+                <div class="mission-actions">
+                    <button class="mission-start-btn" onclick="startMission('${queuedMissionId}')" 
+                        ${startButtonDisabled} title="${startTooltip}">
+                        ${canStartMission ? "Start Mission" : "Cannot Start"}
+                    </button>
+                </div>
+            `;
+            
+            missionsList.appendChild(missionDiv);
+        });
+    }
+
+    // Set up auto-refresh for mission progress bars
+    if (activeMissionId) {
+        setTimeout(updateMissionProgress, 1000);
+    }
+}
+
+// Sample mission dialogues
+const missionDialogues = {
+    mission_spreadRumors: [
+        {
+            character: "hacker",
+            text: "Hey, I've got a job for you. We need to spread some nasty rumors about GigaCorp in the downtown area."
+        },
+        {
+            character: "hacker",
+            text: "Their public image is already taking a hit, but we can make it worse. A few well-placed whispers in the right ears..."
+        },
+        {
+            character: "player",
+            text: "What's in it for me?"
+        },
+        {
+            character: "hacker",
+            text: "Credits, influence, and my eternal gratitude. Plus, if we keep hitting them like this, they'll start making mistakes."
+        },
+        {
+            character: "hacker",
+            text: "So, you in? I'll need a handful of your followers to make this work."
+        }
+    ],
+    mission_spreadRumors_complete: [
+        {
+            character: "hacker",
+            text: "Nice work! Those rumors are spreading like wildfire. GigaCorp's PR team is working overtime to contain it."
+        },
+        {
+            character: "hacker",
+            text: "Here's your cut as promised. And hey, my contacts think more highly of you now. That's always good in this business."
+        },
+        {
+            character: "player",
+            text: "Keep the jobs coming. I've got plenty of followers ready to help."
+        },
+        {
+            character: "hacker",
+            text: "I like your attitude. I'll be in touch soon with something bigger."
+        }
+    ],
+    mission_dataHeist: [
+        {
+            character: "hacker",
+            text: "I found a backdoor into GigaCorp's private data servers. With your team, we could extract some valuable intel."
+        },
+        {
+            character: "hacker",
+            text: "It's risky, but the payoff could be huge. Tech schematics, employee data, corporate secrets..."
+        },
+        {
+            character: "player",
+            text: "What do you need from me?"
+        },
+        {
+            character: "hacker",
+            text: "Some of your best people, and a bit of funding to set up the proper hardware."
+        },
+        {
+            character: "hacker",
+            text: "So, we doing this or what?"
+        }
+    ],
+    mission_dataHeist_complete: [
+        {
+            character: "hacker",
+            text: "We hit the jackpot! The data we extracted is worth its weight in gold."
+        },
+        {
+            character: "hacker",
+            text: "Tech schematics, security protocols, and some juicy corporate secrets. This is going to set GigaCorp back months."
+        },
+        {
+            character: "player",
+            text: "What about security? Any chance they traced us?"
+        },
+        {
+            character: "hacker",
+            text: "Nah, we're clean. Used a dozen proxies and wiped all logs. We're ghosts as far as they're concerned."
+        }
+    ]
+};
+
+// Add mission dialogues to the global dialogues object
+if (typeof window.dialogues === "undefined") {
+    window.dialogues = {};
+}
+Object.assign(window.dialogues, missionDialogues);
+
+// Expose mission functions to the global scope
+window.acceptMission = acceptMission;
+window.startMission = startMission;
+window.completeMission = completeMission;
+
+// Display a notification to the user
+function showNotification(title, message) {
+    // Create notification element if it doesn't exist
+    let notification = document.getElementById('game-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'game-notification';
+        notification.className = 'game-notification';
+        document.body.appendChild(notification);
+    }
+
+    // Set content
+    notification.innerHTML = `
+        <div class="notification-header">
+            <span class="notification-title">${title}</span>
+            <span class="notification-close">×</span>
+        </div>
+        <div class="notification-body">
+            ${message}
+        </div>
+    `;
+
+    // Show the notification
+    notification.classList.add('show');
+
+    // Add close handler
+    const closeBtn = notification.querySelector('.notification-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            notification.classList.remove('show');
+        });
+    }
+
+    // Auto-hide after 5 seconds
+    setTimeout(function() {
+        notification.classList.remove('show');
+    }, 5000);
+}
+
+// Expose global functions
+window.acceptMission = acceptMission;
+window.startMission = startMission;
+window.completeMission = completeMission;
+window.showNotification = showNotification;
+        
+// Function to load missions from CSV file
+function loadMissionsFromCSV() {
+    console.log("Loading missions from CSV file...");
+    
+    // Create a fetch request for the missions.csv file
+    fetch('missions.csv')
+        .then(response => response.text())
+        .then(data => {
+            const lines = data.split('\n');
+            
+            // Skip header line
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue; // Skip empty lines
+                
+                const line = lines[i].replace(/"/g, ''); // Remove quotes
+                const columns = line.split(',');
+                
+                if (columns.length < 9) continue; // Skip incomplete lines
+                
+                const missionId = columns[0].trim();
+                const missionName = columns[1].trim();
+                const missionLocation = columns[2].trim();
+                const missionDuration = parseDuration(columns[3].trim());
+                const missionCooldown = parseDuration(columns[4].trim());
+                const missionSlots = parseInt(columns[5].trim()) || 1;
+                const missionCost = parseCost(columns[6].trim());
+                const missionReward = parseReward(columns[7].trim());
+                const missionExtraSuccess = columns[8].trim();
+                const missionFailure = columns.length > 9 ? columns[9].trim() : "";
+                
+                // Determine the faction based on the location
+                const factionId = determineFactionFromLocation(missionLocation);
+                
+                // Create mission object
+                const mission = {
+                    id: missionId,
+                    name: missionName,
+                    desc: `A mission in ${missionLocation}. ${missionExtraSuccess}`,
+                    location: missionLocation,
+                    cost: missionCost,
+                    duration: missionDuration, // in seconds
+                    cooldown: missionCooldown, // in seconds
+                    slots: missionSlots,
+                    reward: missionReward,
+                    extraSuccess: missionExtraSuccess,
+                    failure: missionFailure,
+                    factionId: factionId,
+                    reputationGain: 5, // Default reputation gain
+                    unlocked: false, // Missions need to be offered by factions first
+                    dialogueId: `mission_${missionId.toLowerCase()}`,
+                    completionDialogueId: `mission_${missionId.toLowerCase()}_complete`
+                };
+                
+                // Add to gameState
+                if (!gameState.missions.availableMissions) {
+                    gameState.missions.availableMissions = {};
+                }
+                gameState.missions.availableMissions[missionId] = mission;
+                console.log(`Loaded mission: ${missionId} - ${missionName}`);
+            }
+            
+            console.log(`Loaded ${Object.keys(gameState.missions.availableMissions).length} missions`);
+        })
+        .catch(error => {
+            console.error("Error loading missions from CSV:", error);
+        });
+}
+
+// Helper function to parse duration strings like "5 min" into seconds
+function parseDuration(durationStr) {
+    if (!durationStr) return 60; // Default 1 minute
+    
+    const parts = durationStr.split(' ');
+    if (parts.length !== 2) return 60;
+    
+    const value = parseFloat(parts[0]);
+    const unit = parts[1].toLowerCase();
+    
+    if (unit.includes('min')) {
+        return value * 60; // Convert minutes to seconds
+    } else if (unit.includes('sec') || unit.includes('s')) {
+        return value; // Already in seconds
+    } else if (unit.includes('hour') || unit.includes('hr')) {
+        return value * 3600; // Convert hours to seconds
+    }
+    
+    return 60; // Default
+}
+
+// Helper function to parse cost strings like "250 Data" or "800 Data + 500 Energy"
+function parseCost(costStr) {
+    if (!costStr) return { followers: 10 }; // Default cost
+    
+    const cost = {};
+    const parts = costStr.split('+');
+    
+    for (let part of parts) {
+        part = part.trim();
+        const match = part.match(/(\d+)\s+(\w+)/);
+        if (match) {
+            const value = parseInt(match[1]);
+            let resource = match[2].toLowerCase();
+            
+            // Map CSV resource names to our resource keys
+            if (resource === 'data') resource = 'techPoints';
+            else if (resource === 'energy') resource = 'energy';
+            else if (resource === 'credits') resource = 'credits';
+            else if (resource === 'followers') resource = 'followers';
+            else if (resource === 'tech' || resource === 'tech points' || resource === 'tech pts') resource = 'techPoints';
+            else if (resource === 'morale') resource = 'influence';
+            
+            cost[resource] = value;
+        }
+    }
+    
+    // Ensure missions always cost followers (gameplay requirement)
+    if (!cost.followers) {
+        cost.followers = 10 + (Object.values(cost).reduce((a, b) => a + b, 0) / 100);
+    }
+    
+    return cost;
+}
+
+// Helper function to parse reward strings like "+1 K Followers" or "+300 Data"
+function parseReward(rewardStr) {
+    if (!rewardStr) return { credits: 50 }; // Default reward
+    
+    const reward = {};
+    const parts = rewardStr.split('+');
+    
+    for (let part of parts) {
+        part = part.trim();
+        if (!part) continue;
+        
+        // Handle different reward formats
+        let value = 0;
+        let resource = '';
+        
+        // Format: "+1 K Followers" or "+300 Data"
+        const kMatch = part.match(/(\d+(?:\.\d+)?)\s*K\s+(\w+)/i);
+        if (kMatch) {
+            value = parseFloat(kMatch[1]) * 1000;
+            resource = kMatch[2].toLowerCase();
+        } else {
+            // Format: "+300 Data"
+            const normalMatch = part.match(/(\d+(?:\.\d+)?)\s+(\w+)/);
+            if (normalMatch) {
+                value = parseFloat(normalMatch[1]);
+                resource = normalMatch[2].toLowerCase();
+            } else {
+                // Format: Special effects like "2 × Productivity (60 s)"
+                // These are handled by extraSuccess and don't convert to a direct resource
+                continue;
+            }
+        }
+        
+        // Map CSV resource names to our resource keys
+        if (resource === 'data') resource = 'techPoints';
+        else if (resource === 'energy') resource = 'energy';
+        else if (resource === 'credits') resource = 'credits';
+        else if (resource === 'followers') resource = 'followers';
+        else if (resource === 'tech' || resource === 'tech points' || resource === 'tech pts') resource = 'techPoints';
+        else if (resource === 'morale') resource = 'influence';
+        
+        reward[resource] = value;
+    }
+    
+    // Ensure missions always give some credits (gameplay requirement)
+    if (Object.keys(reward).length === 0) {
+        reward.credits = 50;
+    }
+    
+    return reward;
+}
+
+// Helper function to determine faction from mission location
+function determineFactionFromLocation(location) {
+    location = location.toLowerCase();
+    
+    if (location.includes('tech') || location.includes('ai lab')) return 'Hackers';
+    if (location.includes('musk') || location.includes('bot bay')) return 'Muskers';
+    if (location.includes('harbor') || location.includes('cryptid')) return 'Cryptids';
+    if (location.includes('shillz') || location.includes('capitol') || location.includes('government')) return 'ShillZ';
+    if (location.includes('living') || location.includes('abandoned')) return 'Rebels';
+    if (location.includes('giga') || location.includes('metaverse')) return 'GigaCorp';
+    
+    // Default to Rebels for unknown locations
+    return 'Rebels';
+}
         

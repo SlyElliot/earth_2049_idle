@@ -38,11 +38,10 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             factionStanding: {
                 "ShillZ": 0,
-                "GigaCorp": 0,
+                "GIGACORP": 0,
                 "Muskers": 0,
                 "Cryptids": 0,
-                "Hackers": 0,
-                "MechRebels": 0
+                "The Bots": 0
             },
             activeMissions: [],
             completedMissions: [],
@@ -50,17 +49,14 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Set up faction contact definitions
-    if (!window.factionContacts) {
-        window.factionContacts = {
-            "ShillZ": { name: "Riya Vex", portrait: "images/riya_portrait.png" },
-            "GigaCorp": { name: "Executive Zhu", portrait: "images/executive_portrait.png" },
-            "Muskers": { name: "Magnus", portrait: "images/magnus_portrait.png" },
-            "Cryptids": { name: "Blitz", portrait: "images/blitz_portrait.png" },
-            "Hackers": { name: "ZeroCool", portrait: "images/zerocool_portrait.png" },
-            "MechRebels": { name: "Iron Skull", portrait: "images/ironskull_portrait.png" }
-        };
-    }
+    // Set up faction contact definitions (always update to ensure correct values)
+    window.factionContacts = {
+        "ShillZ": { name: "Riya Vex", title: "Chief Information Officer", portrait: "images/riya_portrait.png" },
+        "GIGACORP": { name: "Chairman Zhu", title: "Chief Executive Officer", portrait: "images/ChairmanZhu_Portrait.png" },
+        "Muskers": { name: "Magnus Override", title: "Tech Evangelist", portrait: "images/magnus_portrait.png" },
+        "Cryptids": { name: "Blitz", title: "Crypto Lord", portrait: "images/blitz_portrait.png" },
+        "The Bots": { name: "SPYD3R", title: "Network Consciousness", portrait: "images/SPYD3R_Portrait.png" }
+    };
     
     // Generate the faction interface
     const gameState = window.gameState || {};
@@ -136,7 +132,7 @@ function getFactionDetails(factionId) {
 
 // Get all faction details
 function getAllFactionDetails() {
-    const factions = ["ShillZ", "GigaCorp", "Muskers", "Cryptids", "Hackers", "MechRebels"];
+    const factions = ["ShillZ", "GIGACORP", "Muskers", "Cryptids", "The Bots"];
     const details = {};
     
     factions.forEach(factionId => {
@@ -601,24 +597,51 @@ function getShillZMissionIds() {
     ];
 }
 
+// Get mission IDs for each faction
+function getFactionMissionIds(factionId) {
+    const missionIdMap = {
+        "ShillZ": ["M-001", "M-002", "M-003", "M-004", "M-005", "M-019"],
+        "GIGACORP": ["G-001", "G-002"],
+        "The Bots": ["B-001", "B-002"],
+        "Cryptids": ["C-001", "C-002"],
+        "Muskers": ["MU-001", "MU-002", "MU-025", "MU-026", "MU-027", "MU-028", "MU-029", "MU-030"]
+    };
+    
+    return missionIdMap[factionId] || [];
+}
+
 // Contact faction for a dialogue interaction
 function contactFaction(factionId, gameState) {
     console.log(`Contacting faction: ${factionId}`);
     
-    const contact = factionContacts[factionId];
+    // Ensure factionContacts is initialized
+    if (!window.factionContacts) {
+        console.warn('factionContacts not initialized, setting it now');
+        window.factionContacts = {
+            "ShillZ": { name: "Riya Vex", title: "Chief Information Officer", portrait: "images/riya_portrait.png" },
+            "GIGACORP": { name: "Chairman Zhu", title: "Chief Executive Officer", portrait: "images/ChairmanZhu_Portrait.png" },
+            "Muskers": { name: "Magnus Override", title: "Tech Evangelist", portrait: "images/magnus_portrait.png" },
+            "Cryptids": { name: "Blitz", title: "Crypto Lord", portrait: "images/blitz_portrait.png" },
+            "The Bots": { name: "SPYD3R", title: "Network Consciousness", portrait: "images/SPYD3R_Portrait.png" }
+        };
+    }
+    
+    const contact = window.factionContacts[factionId];
     if (!contact) {
         console.error(`No contact defined for faction: ${factionId}`);
+        console.log('Available factions:', Object.keys(window.factionContacts));
         return;
     }
     
-    // For ShillZ, directly trigger a mission dialogue
-    if (factionId === "ShillZ") {
-        // Get a random mission ID for ShillZ
-        const missionIds = ["M-001", "M-002", "M-003", "M-004", "M-005", "M-019"];
+    // Get mission IDs for this faction
+    const missionIds = getFactionMissionIds(factionId);
+    
+    if (missionIds.length > 0) {
+        // Pick a random mission from this faction
         const randomIndex = Math.floor(Math.random() * missionIds.length);
         const missionId = missionIds[randomIndex];
         
-        console.log(`Directly triggering ShillZ mission: ${missionId}`);
+        console.log(`Triggering ${factionId} mission: ${missionId}`);
         if (typeof window.showMissionDialogue === 'function') {
             window.showMissionDialogue(missionId);
         } else {
@@ -626,7 +649,7 @@ function contactFaction(factionId, gameState) {
             showFactionMessage(factionId, "Communication systems offline. Try again later.");
         }
     } else {
-        // For other factions, use default dialogue system
+        // No missions available for this faction yet
         showFactionMessage(factionId, `${contact.name} is not available for communication at this time.`);
     }
 }

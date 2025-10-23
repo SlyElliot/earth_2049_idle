@@ -209,47 +209,41 @@ class RunSeedRandomizer {
             ],
             homeDistricts: {
                 "ShillZ": "shillzCentral",
-                "GigaCorp": "gigaCorpHQ",
+                "GIGACORP": "gigaCorpHQ",
                 "Muskers": "muskersTerritory",
-                "Cryptids": "cryptidsDomain",
-                "Hackers": "hackersDen",
-                "MechRebels": "mechRebelsBase"
+                "Cryptids": "cryptoHub",
+                "The Bots": "botBase"
             },
             factions: [
-                "ShillZ", "GigaCorp", "Muskers", "Cryptids", "Hackers", "MechRebels"
+                "ShillZ", "GIGACORP", "Muskers", "Cryptids", "The Bots"
             ],
             factionWeights: {
                 "ShillZ": 50,
-                "GigaCorp": 40,
+                "GIGACORP": 40,
                 "Muskers": 50,
                 "Cryptids": 40,
-                "Hackers": 50,
-                "MechRebels": 40
+                "The Bots": 40
             },
             diplomacyRules: {
                 "ShillZ": {
-                    ally_choices: ["Muskers", "Hackers", "MechRebels"],
-                    rival_choices: ["GigaCorp", "Cryptids"]
+                    ally_choices: ["Muskers", "Cryptids", "GIGACORP"],
+                    rival_choices: ["The Bots"]
                 },
-                "GigaCorp": {
-                    ally_choices: ["Muskers", "Cryptids"],
-                    rival_choices: ["ShillZ", "Hackers", "MechRebels"]
+                "GIGACORP": {
+                    ally_choices: ["Muskers", "Cryptids", "ShillZ"],
+                    rival_choices: ["The Bots"]
                 },
                 "Muskers": {
-                    ally_choices: ["ShillZ", "GigaCorp", "MechRebels"],
-                    rival_choices: ["Cryptids", "Hackers"]
+                    ally_choices: ["ShillZ", "GIGACORP"],
+                    rival_choices: ["The Bots"]
                 },
                 "Cryptids": {
-                    ally_choices: ["GigaCorp", "Hackers"],
-                    rival_choices: ["ShillZ", "Muskers", "MechRebels"]
+                    ally_choices: ["GIGACORP", "ShillZ"],
+                    rival_choices: ["The Bots"]
                 },
-                "Hackers": {
-                    ally_choices: ["ShillZ", "Cryptids", "MechRebels"],
-                    rival_choices: ["GigaCorp", "Muskers"]
-                },
-                "MechRebels": {
-                    ally_choices: ["ShillZ", "Muskers", "Hackers"],
-                    rival_choices: ["GigaCorp", "Cryptids"]
+                "The Bots": {
+                    ally_choices: [],
+                    rival_choices: ["GIGACORP", "ShillZ", "Muskers", "Cryptids"]
                 }
             },
             mutators: [

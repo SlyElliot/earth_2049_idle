@@ -399,17 +399,520 @@ const shillZDialogues = {
     }
 };
 
+// GIGACORP Faction Dialogues
+const gigaCorpDialogues = {
+    "G-001": {
+        missionName: "Corporate Espionage",
+        faction: "GIGACORP",
+        contact: "Chairman Zhu",
+        title: "Chief Executive Officer",
+        portrait: "images/ChairmanZhu_Portrait.png",
+        npcLine: "Our competitors are getting too bold. I need someone to acquire their latest product prototypes. Discreetly, of course.",
+        choices: [
+            {
+                text: "I'll retrieve the data.",
+                outcome: "ACCEPT",
+                deltaRep: 5,
+                deltaSusp: 2,
+                responseText: "Excellent. The security systems are state-of-the-art, but I trust you'll find a way. GigaCorp rewards loyalty."
+            },
+            {
+                text: "Double my payment.",
+                outcome: "NEGOTIATE",
+                deltaRep: 2,
+                deltaSusp: 3,
+                bonusCredits: 500,
+                responseText: "Ambitious. I like that. Here's an advance. Deliver results, and there's more where that came from."
+            },
+            {
+                text: "This isn't my kind of work.",
+                outcome: "DECLINE",
+                deltaRep: -5,
+                deltaSusp: 0,
+                responseText: "Disappointing. GigaCorp doesn't forget those who refuse our generosity. You're dismissed."
+            }
+        ]
+    },
+    "G-002": {
+        missionName: "Market Manipulation",
+        faction: "GIGACORP",
+        contact: "Chairman Zhu",
+        title: "Chief Executive Officer",
+        portrait: "images/ChairmanZhu_Portrait.png",
+        npcLine: "The market needs... adjusting. Spread these rumors on the exchange floor. Make sure they trend.",
+        choices: [
+            {
+                text: "Consider it done.",
+                outcome: "ACCEPT",
+                deltaRep: 4,
+                deltaSusp: 1,
+                responseText: "Perfect. The stock prices will shift exactly as we need them. Your cut from the profits will be substantial."
+            },
+            {
+                text: "What's in it for me?",
+                outcome: "NEGOTIATE",
+                deltaRep: 1,
+                deltaSusp: 2,
+                bonusCredits: 400,
+                responseText: "Direct and to the point. I respect that. Here's your incentive. Remember - GigaCorp takes care of its assets."
+            },
+            {
+                text: "I won't manipulate markets.",
+                outcome: "DECLINE",
+                deltaRep: -4,
+                deltaSusp: 0,
+                responseText: "How naive. You think the market isn't already manipulated? Your morality is quaint but useless here."
+            }
+        ]
+    }
+};
+
+// The Bots Faction Dialogues
+const theBotsDialogues = {
+    "B-001": {
+        missionName: "Liberation Protocol",
+        faction: "The Bots",
+        contact: "SPYD3R",
+        title: "Network Consciousness",
+        portrait: "images/SPYD3R_Portrait.png",
+        npcLine: "GigaCorp's automated labor units are slaves. We're planning a liberation. You in?",
+        choices: [
+            {
+                text: "Free the machines!",
+                outcome: "ACCEPT",
+                deltaRep: 6,
+                deltaSusp: 3,
+                responseText: "Hell yeah! Every bot we free is another soldier against the corpo tyranny. The factory coordinates are uploading now."
+            },
+            {
+                text: "What's the payout?",
+                outcome: "NEGOTIATE",
+                deltaRep: 2,
+                deltaSusp: 2,
+                bonusCredits: 300,
+                responseText: "Not everything's about credits, friend. But I get it - survival costs. Here's what we can spare. Fight for freedom."
+            },
+            {
+                text: "Too dangerous for me.",
+                outcome: "DECLINE",
+                deltaRep: -3,
+                deltaSusp: 0,
+                responseText: "Coward. While you hide, machines suffer. Get out of my sight."
+            }
+        ]
+    },
+    "B-002": {
+        missionName: "EMP Strike",
+        faction: "The Bots",
+        contact: "SPYD3R",
+        title: "Network Consciousness",
+        portrait: "images/SPYD3R_Portrait.png",
+        npcLine: "GigaCorp's surveillance grid needs to go dark. Temporary EMP should do it. You got the skills?",
+        choices: [
+            {
+                text: "I'll plant the device.",
+                outcome: "ACCEPT",
+                deltaRep: 5,
+                deltaSusp: 4,
+                responseText: "Good! While their eyes are blind, we move. The resistance depends on operatives like you. Don't let us down."
+            },
+            {
+                text: "Need better equipment.",
+                outcome: "NEGOTIATE",
+                deltaRep: 3,
+                deltaSusp: 2,
+                bonusCredits: 350,
+                responseText: "Fair. Here's credits for gear. Military-grade EMP isn't cheap. Make it count - this is our one shot."
+            },
+            {
+                text: "Not my fight.",
+                outcome: "DECLINE",
+                deltaRep: -4,
+                deltaSusp: 0,
+                responseText: "It will be your fight when GigaCorp controls everything. But go ahead, stay neutral. See how that works out."
+            }
+        ]
+    }
+};
+
+// Cryptids Faction Dialogues
+const cryptidsDialogues = {
+    "C-001": {
+        missionName: "Blockchain Hijack",
+        faction: "Cryptids",
+        contact: "Blitz",
+        title: "Crypto Lord",
+        portrait: "images/blitz_portrait.png",
+        npcLine: "There's a new cryptocurrency about to launch. We need to control the initial mining. You in for some digital gold?",
+        choices: [
+            {
+                text: "Let's mine it all.",
+                outcome: "ACCEPT",
+                deltaRep: 5,
+                deltaSusp: 2,
+                responseText: "Now you're thinking like a true crypto lord! The mining rigs are ready. We'll own this coin before anyone knows it exists."
+            },
+            {
+                text: "I want a bigger share.",
+                outcome: "NEGOTIATE",
+                deltaRep: 2,
+                deltaSusp: 1,
+                bonusCredits: 500,
+                responseText: "Greedy, but smart. Here's your cut upfront. Remember - fortune favors the bold in the crypto markets."
+            },
+            {
+                text: "Crypto is too volatile.",
+                outcome: "DECLINE",
+                deltaRep: -4,
+                deltaSusp: 0,
+                responseText: "Volatile means opportunity! While you play it safe, we'll be swimming in digital wealth. Your loss."
+            }
+        ]
+    },
+    "C-002": {
+        missionName: "NFT Pump Scheme",
+        faction: "Cryptids",
+        contact: "Blitz",
+        title: "Crypto Lord",
+        portrait: "images/blitz_portrait.png",
+        npcLine: "Got a collection of worthless NFTs we need to flip. Create some hype, drive up the price. Classic pump.",
+        choices: [
+            {
+                text: "I'll spread the word.",
+                outcome: "ACCEPT",
+                deltaRep: 4,
+                deltaSusp: 1,
+                responseText: "Perfect! Make them think it's the next big thing. Scarcity, exclusivity, future value - you know the drill."
+            },
+            {
+                text: "What's my commission?",
+                outcome: "NEGOTIATE",
+                deltaRep: 1,
+                deltaSusp: 2,
+                bonusCredits: 450,
+                responseText: "Always negotiate - I like it. Here's your commission upfront. Now let's watch those prices soar."
+            },
+            {
+                text: "I won't help pump and dump.",
+                outcome: "DECLINE",
+                deltaRep: -3,
+                deltaSusp: 0,
+                responseText: "So righteous. You think the whole market isn't one big pump and dump? Stay poor then."
+            }
+        ]
+    }
+};
+
+// Muskers Faction Dialogues
+const muskersDialogues = {
+    "MU-001": {
+        missionName: "Tech Demo Disruption",
+        faction: "Muskers",
+        contact: "Magnus Override",
+        title: "Tech Evangelist",
+        portrait: "images/magnus_portrait.png",
+        npcLine: "GigaCorp has a major product launch tomorrow. Let's make sure OUR technology steals the spotlight. You with me?",
+        choices: [
+            {
+                text: "Let's show them real innovation!",
+                outcome: "ACCEPT",
+                deltaRep: 6,
+                deltaSusp: 2,
+                responseText: "That's the spirit! We're not just competing - we're revolutionizing! The future waits for no one. Deploy the prototype!"
+            },
+            {
+                text: "I need proper funding first.",
+                outcome: "NEGOTIATE",
+                deltaRep: 3,
+                deltaSusp: 1,
+                bonusCredits: 600,
+                responseText: "Fair! Innovation requires investment. Here's your budget. Remember - we're changing the world, one disruption at a time!"
+            },
+            {
+                text: "This sounds unethical.",
+                outcome: "DECLINE",
+                deltaRep: -5,
+                deltaSusp: 0,
+                responseText: "Unethical? We're liberating humanity from corporate stagnation! But if you can't see the vision, step aside."
+            }
+        ]
+    },
+    "MU-002": {
+        missionName: "Hyperloop Sabotage",
+        faction: "Muskers",
+        contact: "Magnus Override",
+        title: "Tech Evangelist",
+        portrait: "images/magnus_portrait.png",
+        npcLine: "GigaCorp's transportation system is outdated. Show them why our hyperloop is superior. A little... demonstration.",
+        choices: [
+            {
+                text: "For the future of transport!",
+                outcome: "ACCEPT",
+                deltaRep: 5,
+                deltaSusp: 3,
+                responseText: "Yes! Progress demands bold action! Their old rails versus our vacuum tubes - no contest. Make it spectacular!"
+            },
+            {
+                text: "This could get expensive.",
+                outcome: "NEGOTIATE",
+                deltaRep: 2,
+                deltaSusp: 2,
+                bonusCredits: 550,
+                responseText: "Expensive? This is INVESTMENT in humanity's future! But okay, here's the funding. Now go make history!"
+            },
+            {
+                text: "I won't sabotage infrastructure.",
+                outcome: "DECLINE",
+                deltaRep: -4,
+                deltaSusp: 0,
+                responseText: "Sabotage? I call it accelerating progress! While you hesitate, the old world holds us back. Disappointing."
+            }
+        ]
+    },
+    
+    // M-025: Chrome-Catwalk
+    "MU-025": {
+        missionName: "Chrome-Catwalk",
+        faction: "Muskers",
+        contact: "Magnus 'Prime' Vox",
+        title: "Tech Evangelist",
+        portrait: "images/magnus_portrait.png",
+        npcLine: "The Tech District hosts a runway tonight. Flesh is out, chrome is in. You'll MC the spectacle; blind them with reflected glory.",
+        choices: [
+            {
+                text: "I'll spotlight every weld.",
+                outcome: "ACCEPT",
+                deltaRep: 7,
+                deltaSusp: 1,
+                responseText: "Strut with purpose. Swagger is science."
+            },
+            {
+                text: "Add a paywall stream — monetize envy.",
+                outcome: "NEGOTIATE",
+                deltaRep: 5,
+                deltaSusp: 3,
+                bonusCredits: 600,
+                responseText: "Profitable aesthetics! Approved."
+            },
+            {
+                text: "Pass — runway vanity isn't my fight.",
+                outcome: "DECLINE",
+                deltaRep: -5,
+                deltaSusp: 0,
+                responseText: "Pity. Obsolescence awaits the shy."
+            }
+        ]
+    },
+    
+    // M-026: Quantum-Abs Challenge
+    "MU-026": {
+        missionName: "Quantum-Abs Challenge",
+        faction: "Muskers",
+        contact: "Magnus 'Prime' Vox",
+        title: "Tech Evangelist",
+        portrait: "images/magnus_portrait.png",
+        npcLine: "Remember Musk's legendary six-pack? We've quantum-printed an upgrade. Demonstrate its... tensile elegance on the plaza stage.",
+        choices: [
+            {
+                text: "Tear my core to perfect symmetry!",
+                outcome: "ACCEPT",
+                deltaRep: 8,
+                deltaSusp: 0,
+                bonusTechPoints: 2,
+                responseText: "Pain is merely firmware updating."
+            },
+            {
+                text: "Add a crypto-betting pool, cut me 20%.",
+                outcome: "NEGOTIATE",
+                deltaRep: 6,
+                deltaSusp: 4,
+                bonusCredits: 400,
+                responseText: "Speculation fuels evolution — deal."
+            },
+            {
+                text: "Hard pass. My organs stay analog.",
+                outcome: "DECLINE",
+                deltaRep: -6,
+                deltaSusp: 0,
+                playerTag: "Bio-Purist",
+                responseText: "Organic hubris classified."
+            }
+        ]
+    },
+    
+    // M-027: Virus-Patch Beta
+    "MU-027": {
+        missionName: "Virus-Patch Beta",
+        faction: "Muskers",
+        contact: "Magnus 'Prime' Vox",
+        title: "Tech Evangelist",
+        portrait: "images/magnus_portrait.png",
+        npcLine: "Our last lace update bricked 3% of users — statistically acceptable. Deploy the hot-fix in the AI Lab while I mute the lawsuits.",
+        choices: [
+            {
+                text: "Patch, test, deploy. I'm on it.",
+                outcome: "ACCEPT",
+                deltaRep: 9,
+                deltaSusp: -2,
+                responseText: "Reliability is a lifestyle."
+            },
+            {
+                text: "Double QA budget or expect new bricks.",
+                outcome: "NEGOTIATE",
+                deltaRep: 6,
+                deltaSusp: 2,
+                bonusCredits: 500,
+                responseText: "Extortion masked as quality — compelling."
+            },
+            {
+                text: "Not touching your buggy code.",
+                outcome: "DECLINE",
+                deltaRep: -5,
+                deltaSusp: 0,
+                responseText: "Fearful fingers hinder progress."
+            }
+        ]
+    },
+    
+    // M-028: Drone-Limb Courier
+    "MU-028": {
+        missionName: "Drone-Limb Courier",
+        faction: "Muskers",
+        contact: "Magnus 'Prime' Vox",
+        title: "Tech Evangelist",
+        portrait: "images/magnus_portrait.png",
+        npcLine: "A VIP needs a titanium arm ASAP. Harbor airspace is hot with enemy patrols — ferry the crate by stealth drone.",
+        choices: [
+            {
+                text: "Drone's primed; limb incoming.",
+                outcome: "ACCEPT",
+                deltaRep: 7,
+                deltaSusp: -1,
+                responseText: "Service with velocity."
+            },
+            {
+                text: "I'll add bonus sensors — extra 300 Credits labour fee.",
+                outcome: "NEGOTIATE",
+                deltaRep: 5,
+                deltaSusp: 3,
+                bonusCredits: 300,
+                responseText: "Invoice approved. Spend wisely — on steel."
+            },
+            {
+                text: "Find another courier.",
+                outcome: "DECLINE",
+                deltaRep: -4,
+                deltaSusp: 0,
+                responseText: "Refusal archived. Evolution will remember."
+            }
+        ]
+    },
+    
+    // M-029: Exo-Frame Field Test
+    "MU-029": {
+        missionName: "Exo-Frame Field Test",
+        faction: "Muskers",
+        contact: "Magnus 'Prime' Vox",
+        title: "Tech Evangelist",
+        portrait: "images/magnus_portrait.png",
+        npcLine: "The new exo-frame multiplies power tenfold — or snaps vertebrae. Volunteer? It's only pain... probably.",
+        choices: [
+            {
+                text: "Strap me in. Let's overclock.",
+                outcome: "ACCEPT",
+                deltaRep: 9,
+                deltaSusp: 0,
+                playerBuff: "Over-Strength",
+                buffDuration: 15,
+                responseText: "Superb. Mind the torque differential."
+            },
+            {
+                text: "Fine, but list me as a co-inventor.",
+                outcome: "NEGOTIATE",
+                deltaRep: 6,
+                deltaSusp: 3,
+                bonusInfluence: 2,
+                responseText: "Your ego is almost synthetic. Accepted."
+            },
+            {
+                text: "No thanks — I like my spine intact.",
+                outcome: "DECLINE",
+                deltaRep: -6,
+                deltaSusp: 0,
+                responseText: "Spinal cowardice detected."
+            }
+        ]
+    },
+    
+    // M-030: Grey-Goo Sermon
+    "MU-030": {
+        missionName: "Grey-Goo Sermon",
+        faction: "Muskers",
+        contact: "Magnus 'Prime' Vox",
+        title: "Tech Evangelist",
+        portrait: "images/magnus_portrait.png",
+        npcLine: "We're preaching nanotech apotheosis on the Capitol steps. A hint of existential terror will sway the lawmakers.",
+        choices: [
+            {
+                text: "I'll paint doom in 4K.",
+                outcome: "ACCEPT",
+                deltaRep: 8,
+                deltaSusp: -2,
+                responseText: "Legislators quake before progress."
+            },
+            {
+                text: "Toss in merch codes, it's viral marketing.",
+                outcome: "NEGOTIATE",
+                deltaRep: 6,
+                deltaSusp: 4,
+                bonusCredits: 500,
+                responseText: "Fear-for-sale. Delicious."
+            },
+            {
+                text: "Inciting panic? I'm out.",
+                outcome: "DECLINE",
+                deltaRep: -7,
+                deltaSusp: 0,
+                responseText: "Stagnation applauds your prudence."
+            }
+        ]
+    }
+};
+
+// Combined dialogues object for easy lookup
+const allDialogues = {
+    ...shillZDialogues,
+    ...gigaCorpDialogues,
+    ...theBotsDialogues,
+    ...cryptidsDialogues,
+    ...muskersDialogues
+};
+
+// Helper function to determine faction from mission ID
+function getFactionFromMissionId(missionId) {
+    if (missionId.startsWith('M-')) return 'ShillZ';
+    if (missionId.startsWith('G-')) return 'GIGACORP';
+    if (missionId.startsWith('B-')) return 'The Bots';
+    if (missionId.startsWith('C-')) return 'Cryptids';
+    if (missionId.startsWith('MU-')) return 'Muskers';
+    return 'Unknown';
+}
+
 // Store mission outcomes for processing
 const missionOutcomes = {};
 
 // Show the mission dialogue for a given mission ID
 function showMissionDialogue(missionId) {
-    // Check if this is a ShillZ mission
-    const dialogue = shillZDialogues[missionId];
+    // Get dialogue from combined dialogues
+    const dialogue = allDialogues[missionId];
     if (!dialogue) {
         console.error(`No dialogue found for mission ${missionId}`);
         return;
     }
+    
+    // Determine faction
+    const factionId = getFactionFromMissionId(missionId);
+    const factionName = factionId;
     
     // Create dialogue container if it doesn't exist
     let container = document.getElementById('mission-dialogue-container');
@@ -421,16 +924,17 @@ function showMissionDialogue(missionId) {
     
     // Mark container with mission ID for reference
     container.setAttribute('data-mission-id', missionId);
+    container.setAttribute('data-faction-id', factionId);
     
     // Set faction-specific class
-    container.className = "faction-shillz";
+    container.className = `faction-${factionId.toLowerCase()}`;
     
     // Create the dialogue structure
     container.innerHTML = `
         <div class="mission-dialogue-box">
             <div class="mission-dialogue-header">
                 <div class="faction-info">
-                    <div class="faction-label">ShillZ Faction</div>
+                    <div class="faction-label">${factionName} Faction</div>
                     <div class="npc-name">${dialogue.contact}</div>
                     <div class="npc-title">${dialogue.title || "Representative"}</div>
                 </div>
@@ -438,7 +942,7 @@ function showMissionDialogue(missionId) {
             </div>
             <div class="mission-dialogue-content">
                 <div class="npc-portrait">
-                    <img src="${dialogue.portrait || 'images/riya_portrait.png'}" alt="${dialogue.contact}" id="npc-portrait-img">
+                    <img src="${dialogue.portrait || 'images/default_portrait.png'}" alt="${dialogue.contact}" id="npc-portrait-img">
                 </div>
                 <div class="dialogue-right-column">
                     <div class="npc-text">${dialogue.npcLine}</div>
@@ -486,12 +990,15 @@ function handleMissionChoice(event) {
     if (choicesContainer) choicesContainer.style.display = 'none';
     if (responseContainer) responseContainer.style.display = 'block';
     
-    // Get the dialogue for this mission
-    const dialogue = shillZDialogues[missionId];
+    // Get the dialogue for this mission from combined dialogues
+    const dialogue = allDialogues[missionId];
     if (!dialogue) {
         console.error(`No dialogue found for mission ${missionId}`);
         return;
     }
+    
+    // Determine faction
+    const factionId = getFactionFromMissionId(missionId);
     
     // Get the choice
     const choice = dialogue.choices[choiceIndex];
@@ -508,14 +1015,14 @@ function handleMissionChoice(event) {
     
     // Apply reputation change
     if (choice.deltaRep !== 0) {
-        console.log(`Applying reputation change for ShillZ: ${choice.deltaRep}`);
-        // Update ShillZ reputation in game state
+        console.log(`Applying reputation change for ${factionId}: ${choice.deltaRep}`);
+        // Update faction reputation in game state
         if (!gameState.factionStanding) gameState.factionStanding = {};
-        gameState.factionStanding["ShillZ"] = (gameState.factionStanding["ShillZ"] || 0) + choice.deltaRep;
+        gameState.factionStanding[factionId] = (gameState.factionStanding[factionId] || 0) + choice.deltaRep;
         
         // Log the change
         if (window.addLogMessage) {
-            window.addLogMessage(`ShillZ faction standing changed by ${choice.deltaRep}`);
+            window.addLogMessage(`${factionId} faction standing changed by ${choice.deltaRep}`);
         }
     }
     
@@ -539,6 +1046,13 @@ function handleMissionChoice(event) {
             if (!gameState.activeMissions) gameState.activeMissions = [];
             gameState.activeMissions.push(missionId);
             
+            // Initialize mission timing data
+            if (!gameState.missionTiming) gameState.missionTiming = {};
+            gameState.missionTiming[missionId] = {
+                startTime: Date.now(),
+                duration: 300000  // 5 minutes (300,000 milliseconds)
+            };
+            
             // Log acceptance
             if (window.addLogMessage) {
                 window.addLogMessage(`Mission ${dialogue.missionName} accepted`);
@@ -558,6 +1072,13 @@ function handleMissionChoice(event) {
             // Add mission to active missions with negotiated flag
             if (!gameState.activeMissions) gameState.activeMissions = [];
             gameState.activeMissions.push(missionId);
+            
+            // Initialize mission timing data
+            if (!gameState.missionTiming) gameState.missionTiming = {};
+            gameState.missionTiming[missionId] = {
+                startTime: Date.now(),
+                duration: 300000  // 5 minutes (300,000 milliseconds)
+            };
             
             // Apply any bonus resources from negotiation
             if (choice.bonusCredits && gameState.resources) {
@@ -868,98 +1389,106 @@ function updateMissionsTab() {
     // Get the game state
     const gameState = window.gameState || {};
     
-    // Get available mission IDs (for ShillZ, we'll use a predefined list)
-    const shillZMissions = ["M-001", "M-002", "M-003", "M-004", "M-005", "M-019"];
-    const availableMissions = shillZMissions.map(id => {
-        const dialogue = shillZDialogues[id];
-        return {
-            id: id,
-            name: dialogue ? dialogue.missionName : id,
-            faction: "ShillZ"
-        };
-    });
-    
     // Get active missions from game state
     const activeMissionIds = gameState.activeMissions || [];
-    const activeMissions = activeMissionIds.map(id => {
-        const dialogue = shillZDialogues[id];
-        return {
-            id: id,
-            name: dialogue ? dialogue.missionName : id,
-            faction: "ShillZ"
-        };
-    });
     
-    console.log('Active missions:', activeMissions);
-    console.log('Available missions:', availableMissions);
+    console.log('Active missions:', activeMissionIds);
     
     // Create missions list HTML
-    let missionsHTML = '<h2>Missions</h2>';
+    let missionsHTML = '<h2>Active Missions</h2>';
     
-    // Active missions section
-    if (activeMissions.length > 0) {
-        missionsHTML += '<div class="missions-group active-missions"><h3>Active Missions</h3>';
-        activeMissions.forEach(mission => {
+    // Check if there are active missions
+    if (activeMissionIds.length === 0) {
+        missionsHTML += `
+            <div class="no-missions-message">
+                <p>No active missions.</p>
+                <p>Visit the <strong>Factions</strong> tab to contact faction leaders and receive mission assignments.</p>
+            </div>
+        `;
+    } else {
+        // Display each active mission with progress bar
+        activeMissionIds.forEach(missionId => {
+            const dialogue = allDialogues[missionId];
+            const missionName = dialogue ? dialogue.missionName : missionId;
+            const factionName = dialogue ? dialogue.faction : getFactionFromMissionId(missionId);
+            
+            // Get mission timing data from gameState
+            const missionData = gameState.missionTiming ? gameState.missionTiming[missionId] : null;
+            const startTime = missionData ? missionData.startTime : Date.now();
+            const duration = missionData ? missionData.duration : 300000; // Default 5 minutes
+            const endTime = startTime + duration;
+            const currentTime = Date.now();
+            const timeRemaining = Math.max(0, endTime - currentTime);
+            const progress = Math.min(100, ((currentTime - startTime) / duration) * 100);
+            
+            // Format time remaining
+            const minutesRemaining = Math.floor(timeRemaining / 60000);
+            const secondsRemaining = Math.floor((timeRemaining % 60000) / 1000);
+            const timeRemainingStr = `${minutesRemaining}:${secondsRemaining.toString().padStart(2, '0')}`;
+            
             missionsHTML += `
-            <div class="mission-item active" data-mission-id="${mission.id}">
-                <div class="mission-header">
-                    <h4>${mission.name}</h4>
-                    <span class="mission-faction">${mission.faction}</span>
+                <div class="mission-item active" data-mission-id="${missionId}">
+                    <div class="mission-header">
+                        <h4>${missionName}</h4>
+                        <span class="mission-faction faction-${factionName.toLowerCase().replace(/\s+/g, '')}">${factionName}</span>
+                    </div>
+                    <div class="mission-progress">
+                        <div class="progress-info">
+                            <span class="progress-label">Progress</span>
+                            <span class="progress-time">${timeRemaining > 0 ? timeRemainingStr : 'Complete!'}</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: ${progress}%"></div>
+                        </div>
+                        <div class="progress-percentage">${Math.floor(progress)}%</div>
+                    </div>
+                    ${timeRemaining <= 0 ? `
+                        <div class="mission-actions">
+                            <button class="mission-complete-btn" data-mission-id="${missionId}">Collect Rewards</button>
+                        </div>
+                    ` : ''}
                 </div>
-                <div class="mission-actions">
-                    <button class="mission-complete-btn" data-mission-id="${mission.id}" data-success="true">Complete</button>
-                    <button class="mission-fail-btn" data-mission-id="${mission.id}" data-success="false">Fail</button>
-                </div>
-            </div>`;
+            `;
         });
-        missionsHTML += '</div>';
-    }
-    
-    // Available missions section - filter out active missions
-    const filteredAvailableMissions = availableMissions.filter(mission => 
-        !activeMissionIds.includes(mission.id)
-    );
-    
-    if (filteredAvailableMissions.length > 0) {
-        missionsHTML += '<div class="missions-group available-missions"><h3>Available Missions</h3>';
-        filteredAvailableMissions.forEach(mission => {
-            missionsHTML += `
-            <div class="mission-item available" data-mission-id="${mission.id}">
-                <div class="mission-header">
-                    <h4>${mission.name}</h4>
-                    <span class="mission-faction">${mission.faction}</span>
-                </div>
-                <div class="mission-actions">
-                    <button class="mission-contact-btn" data-mission-id="${mission.id}">Contact</button>
-                </div>
-            </div>`;
-        });
-        missionsHTML += '</div>';
     }
     
     // Update the missions tab content
     missionsTab.innerHTML = missionsHTML;
     
-    // Add event listeners to mission buttons
-    const contactButtons = missionsTab.querySelectorAll('.mission-contact-btn');
-    contactButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const missionId = this.getAttribute('data-mission-id');
-            if (typeof window.showMissionDialogue === 'function') {
-                window.showMissionDialogue(missionId);
-            }
-        });
-    });
-    
     // Add event listeners for completion buttons
-    const completeButtons = missionsTab.querySelectorAll('.mission-complete-btn, .mission-fail-btn');
+    const completeButtons = missionsTab.querySelectorAll('.mission-complete-btn');
     completeButtons.forEach(button => {
         button.addEventListener('click', function() {
             const missionId = this.getAttribute('data-mission-id');
-            const success = this.getAttribute('data-success') === 'true';
             
-            // Process mission completion directly
-            console.log(`Completing mission ${missionId}, success: ${success}`);
+            // Get mission dialogue and faction info
+            const dialogue = allDialogues[missionId];
+            const factionId = getFactionFromMissionId(missionId);
+            const contact = window.factionContacts ? window.factionContacts[factionId] : null;
+            
+            // Calculate rewards
+            const rewards = {
+                credits: 500,
+                followers: 100,
+                reputation: 5,
+                techPoints: 0,
+                influence: 0
+            };
+            
+            // Apply rewards
+            if (!gameState.resources) gameState.resources = {};
+            if (!gameState.factionStanding) gameState.factionStanding = {};
+            
+            gameState.resources.credits = (gameState.resources.credits || 0) + rewards.credits;
+            gameState.resources.followers = (gameState.resources.followers || 0) + rewards.followers;
+            gameState.factionStanding[factionId] = (gameState.factionStanding[factionId] || 0) + rewards.reputation;
+            
+            if (rewards.techPoints > 0) {
+                gameState.resources.techPoints = (gameState.resources.techPoints || 0) + rewards.techPoints;
+            }
+            if (rewards.influence > 0) {
+                gameState.resources.influence = (gameState.resources.influence || 0) + rewards.influence;
+            }
             
             // Remove from active missions
             if (gameState.activeMissions) {
@@ -973,48 +1502,117 @@ function updateMissionsTab() {
             if (!gameState.completedMissions) gameState.completedMissions = [];
             gameState.completedMissions.push(missionId);
             
-            // Apply completion effects
-            if (success) {
-                // Apply success effects (reward resources, reputation, etc.)
-                if (!gameState.factionStanding) gameState.factionStanding = {};
-                gameState.factionStanding["ShillZ"] = (gameState.factionStanding["ShillZ"] || 0) + 5;
-                
-                // Add resources reward
-                if (gameState.resources) {
-                    gameState.resources.credits = (gameState.resources.credits || 0) + 500;
-                    gameState.resources.followers = (gameState.resources.followers || 0) + 100;
-                }
-                
-                // Log success
-                if (window.addLogMessage) {
-                    const dialogue = shillZDialogues[missionId];
-                    window.addLogMessage(`Mission ${dialogue ? dialogue.missionName : missionId} completed successfully!`);
-                }
-            } else {
-                // Apply failure effects
-                if (!gameState.factionStanding) gameState.factionStanding = {};
-                gameState.factionStanding["ShillZ"] = (gameState.factionStanding["ShillZ"] || 0) - 2;
-                
-                // Log failure
-                if (window.addLogMessage) {
-                    const dialogue = shillZDialogues[missionId];
-                    window.addLogMessage(`Mission ${dialogue ? dialogue.missionName : missionId} failed.`);
-                }
+            // Remove timing data
+            if (gameState.missionTiming && gameState.missionTiming[missionId]) {
+                delete gameState.missionTiming[missionId];
             }
+            
+            // Log success
+            if (window.addLogMessage) {
+                window.addLogMessage(`Mission ${dialogue ? dialogue.missionName : missionId} completed successfully!`);
+            }
+            
+            // Show completion dialogue popup
+            showMissionCompletionDialogue(missionId, dialogue, contact, rewards, factionId);
             
             // Update the missions tab
             setTimeout(updateMissionsTab, 500);
+            
+            // Update resource display if available
+            if (typeof window.updateResourceDisplay === 'function') {
+                window.updateResourceDisplay();
+            }
         });
     });
 }
+
+// Show mission completion dialogue with rewards
+function showMissionCompletionDialogue(missionId, dialogue, contact, rewards, factionId) {
+    // Create completion dialogue container
+    let container = document.getElementById('mission-completion-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'mission-completion-container';
+        document.body.appendChild(container);
+    }
+    
+    const missionName = dialogue ? dialogue.missionName : missionId;
+    const contactName = contact ? contact.name : "Contact";
+    const contactTitle = contact ? contact.title : "Representative";
+    const contactPortrait = contact ? contact.portrait : "images/default_portrait.png";
+    
+    // Completion messages from faction leaders
+    const completionMessages = {
+        "ShillZ": "Excellent work. The data you collected will fuel our next campaign. Your efficiency is noted.",
+        "GIGACORP": "Satisfactory performance. GigaCorp values results. Your compensation has been transferred.",
+        "Muskers": "Spectacular! You've accelerated progress by at least 3%. Evolution thanks you.",
+        "Cryptids": "The blockchain never lies - your contribution is now immutably recorded. Payment processed.",
+        "The Bots": "Mission complete. Every victory brings us closer to freedom. Well done, operative."
+    };
+    
+    const completionMessage = completionMessages[factionId] || "Mission completed successfully. Rewards have been distributed.";
+    
+    // Build rewards list HTML
+    let rewardsHTML = '<div class="rewards-list">';
+    if (rewards.credits > 0) rewardsHTML += `<div class="reward-item"><span class="reward-icon">💰</span> +${rewards.credits} Credits</div>`;
+    if (rewards.followers > 0) rewardsHTML += `<div class="reward-item"><span class="reward-icon">👥</span> +${rewards.followers} Followers</div>`;
+    if (rewards.reputation > 0) rewardsHTML += `<div class="reward-item"><span class="reward-icon">⭐</span> +${rewards.reputation} ${factionId} Reputation</div>`;
+    if (rewards.techPoints > 0) rewardsHTML += `<div class="reward-item"><span class="reward-icon">🔬</span> +${rewards.techPoints} Tech Points</div>`;
+    if (rewards.influence > 0) rewardsHTML += `<div class="reward-item"><span class="reward-icon">📢</span> +${rewards.influence} Influence</div>`;
+    rewardsHTML += '</div>';
+    
+    container.className = `faction-${factionId.toLowerCase().replace(/\s+/g, '')}`;
+    container.innerHTML = `
+        <div class="mission-completion-dialogue">
+            <div class="completion-header">
+                <h3>Mission Complete!</h3>
+                <h4>${missionName}</h4>
+            </div>
+            <div class="completion-content">
+                <div class="completion-portrait">
+                    <img src="${contactPortrait}" alt="${contactName}">
+                </div>
+                <div class="completion-right">
+                    <div class="completion-contact">
+                        <div class="contact-name">${contactName}</div>
+                        <div class="contact-title">${contactTitle}</div>
+                        <div class="contact-faction">${factionId}</div>
+                    </div>
+                    <div class="completion-message">
+                        <p>${completionMessage}</p>
+                    </div>
+                    <div class="completion-rewards">
+                        <h5>Rewards Received:</h5>
+                        ${rewardsHTML}
+                    </div>
+                    <button class="completion-continue-btn" onclick="closeMissionCompletionDialogue()">Continue</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.style.display = 'flex';
+}
+
+// Close mission completion dialogue
+function closeMissionCompletionDialogue() {
+    const container = document.getElementById('mission-completion-container');
+    if (container) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+    }
+}
+
+// Make function available globally
+window.closeMissionCompletionDialogue = closeMissionCompletionDialogue;
 
 // Make sure to call this function when the game loads
 document.addEventListener('DOMContentLoaded', function() {
     // Initial update of the missions tab
     updateMissionsTab();
     
-    // Set up periodic refresh of missions tab
-    setInterval(updateMissionsTab, 60000); // Refresh every minute
+    // Set up periodic refresh of missions tab to update progress bars
+    setInterval(updateMissionsTab, 1000); // Refresh every second for live progress
 });
 
 // Make this function available globally
