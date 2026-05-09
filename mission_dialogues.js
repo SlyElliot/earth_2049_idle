@@ -1053,7 +1053,7 @@ function handleMissionChoice(event) {
             if (typeof window.acceptMission === 'function') {
                 window.acceptMission(missionId);
             }
-            
+
             // Log acceptance
             if (window.addLogMessage) {
                 window.addLogMessage(`Mission ${dialogue.missionName} accepted`);
@@ -1073,7 +1073,7 @@ function handleMissionChoice(event) {
             if (typeof window.acceptMission === 'function') {
                 window.acceptMission(missionId);
             }
-            
+
             // Apply any bonus resources from negotiation
             if (choice.bonusCredits && gameState.resources) {
                 gameState.resources.credits = (gameState.resources.credits || 0) + choice.bonusCredits;

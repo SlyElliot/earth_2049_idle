@@ -1296,6 +1296,8 @@ function generateEnergy() {
     } else {
         addLogMessage(`Insufficient credits to generate Energy. Need ${cost} credits.`);
     }
+
+    playSound("sounds/click.wav"); // Play click sound
 }
 
 function cycleClickMultiplier() {
@@ -2459,19 +2461,19 @@ function updateTechTreeDisplay() {
     for (const connection of connections) {
         const fromTech = gameState.techTree[connection.from];
         const toTech = gameState.techTree[connection.to];
-        
+
         if (!fromTech || !toTech || !fromTech.position || !toTech.position) {
             continue;
         }
-        
+
         drawTechConnection(connection, fromTech, toTech, techTreeContainer, connection.isCompleted);
     }
-    
+
     // Finally, append all node elements on top of connections
     for (const node of nodeElements) {
         techTreeContainer.appendChild(node.element);
     }
-    
+
     // Debug info after rendering
     console.log(`DEBUG: Rendered ${nodeElements.length} tech nodes and ${connections.length} connections`);
 }
@@ -2480,7 +2482,7 @@ function updateTechTreeDisplay() {
 function updateTechDetailPanel(techId) {
     const tech = gameState.techTree[techId];
     if (!tech) return;
-    
+
     // Get the new panel elements
     const nameElement = document.getElementById("tech-info-name");
     const descElement = document.getElementById("tech-info-desc");
