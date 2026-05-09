@@ -2574,6 +2574,13 @@ function applyReputationChange(faction, delta, gameState) {
             
         console.log(`Director: Ripple effect - ${otherFaction} standing changed from ${oldRippleStanding} to ${directorState.factionStanding[otherFaction]}`);
     }
+
+    if (gameState) {
+        gameState.factionStanding = gameState.factionStanding || {};
+        for (const [standingFaction, standing] of Object.entries(directorState.factionStanding)) {
+            gameState.factionStanding[standingFaction] = standing;
+        }
+    }
     
     // Check for standing tier changes and trigger events
     checkStandingTierChanges(faction, oldStanding, newStanding, gameState);

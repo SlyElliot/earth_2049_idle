@@ -1050,16 +1050,9 @@ function handleMissionChoice(event) {
     switch(choice.outcome) {
         case "ACCEPT":
             console.log(`Mission ${missionId} accepted`);
-            // Add mission to active missions
-            if (!gameState.activeMissions) gameState.activeMissions = [];
-            gameState.activeMissions.push(missionId);
-            
-            // Initialize mission timing data
-            if (!gameState.missionTiming) gameState.missionTiming = {};
-            gameState.missionTiming[missionId] = {
-                startTime: Date.now(),
-                duration: 300000  // 5 minutes (300,000 milliseconds)
-            };
+            if (typeof window.acceptMission === 'function') {
+                window.acceptMission(missionId);
+            }
             
             // Log acceptance
             if (window.addLogMessage) {
@@ -1077,16 +1070,9 @@ function handleMissionChoice(event) {
             
         case "NEGOTIATE":
             console.log(`Mission ${missionId} negotiated`);
-            // Add mission to active missions with negotiated flag
-            if (!gameState.activeMissions) gameState.activeMissions = [];
-            gameState.activeMissions.push(missionId);
-            
-            // Initialize mission timing data
-            if (!gameState.missionTiming) gameState.missionTiming = {};
-            gameState.missionTiming[missionId] = {
-                startTime: Date.now(),
-                duration: 300000  // 5 minutes (300,000 milliseconds)
-            };
+            if (typeof window.acceptMission === 'function') {
+                window.acceptMission(missionId);
+            }
             
             // Apply any bonus resources from negotiation
             if (choice.bonusCredits && gameState.resources) {
@@ -1388,6 +1374,11 @@ window.handleSpecialEvent = handleSpecialEvent;
 
 // Update the missions tab with available missions
 function updateMissionsTab() {
+    if (typeof window.updateMissionsDisplay === 'function') {
+        window.updateMissionsDisplay();
+        return;
+    }
+
     const missionsTab = document.getElementById('missions-tab');
     if (!missionsTab) {
         console.warn('Missions tab not found in the DOM');

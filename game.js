@@ -535,8 +535,11 @@ const EARTH2049_ALIASES = {
         morale: "influence",
         data: "techPoints",
         tech: "techPoints",
+        "tech point": "techPoints",
         "tech points": "techPoints",
-        "tech pts": "techPoints"
+        "tech pts": "techPoints",
+        "rebellion strength": "rebellionStrength",
+        suspicion: "suspicion"
     },
     factions: {
         gigacorp: "GIGACORP",
@@ -594,6 +597,32 @@ function normalizeTechId(techId) {
 
 function normalizeBoostId(boostId) {
     return resolveEarth2049Alias(EARTH2049_ALIASES.boosts, boostId);
+}
+
+function cleanGameText(value) {
+    if (value === undefined || value === null) return "";
+
+    return String(value)
+        .replace(/\uFEFF/g, "")
+        .replace(/â€‘|â€“|â€”|â€\u0091|â€\x91|[‑–—]/g, "-")
+        .replace(/â€¯|Â |\u00A0|\u202F/g, " ")
+        .replace(/â€œ|â€�|â€/g, '"')
+        .replace(/â€˜|â€™/g, "'")
+        .replace(/Ã—/g, "x")
+        .replace(/â‰¥/g, ">=")
+        .replace(/â†’/g, "->")
+        .replace(/â€œ|â€/g, '"')
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function normalizeMissionId(missionId) {
+    const cleanedMissionId = cleanGameText(missionId);
+    const match = cleanedMissionId.match(/^([A-Z]+)[^0-9]*(\d+)$/i);
+
+    if (!match) return cleanedMissionId;
+
+    return `${match[1].toUpperCase()}-${match[2].padStart(3, "0")}`;
 }
 
 function createLegacyAliasReferences(collection, aliasMap, normalizer) {
@@ -656,9 +685,16 @@ function normalizeGameState(state) {
 
     if (state.missions) {
         normalizeMissionFactionIds(state.missions.availableMissions);
-        normalizeMissionFactionIds(state.missions.queue);
+        if (Array.isArray(state.missions.queue)) {
+            state.missions.queue = [...new Set(state.missions.queue.map(normalizeMissionId))];
+        }
+        if (Array.isArray(state.missions.completedMissions)) {
+            state.missions.completedMissions = [...new Set(state.missions.completedMissions.map(normalizeMissionId))];
+        }
         if (state.missions.activeMission && state.missions.activeMission.factionId) {
             state.missions.activeMission.factionId = normalizeFactionId(state.missions.activeMission.factionId);
+        } else if (state.missions.activeMission) {
+            state.missions.activeMission = normalizeMissionId(state.missions.activeMission);
         }
     }
 
@@ -681,6 +717,8 @@ window.earth2049Canon = Object.assign(window.earth2049Canon || {}, {
     normalizeTerritoryId,
     normalizeTechId,
     normalizeBoostId,
+    normalizeMissionId,
+    cleanGameText,
     normalizeGameState
 });
 
@@ -841,11 +879,16 @@ document.addEventListener("DOMContentLoaded", function initGame() {
                 closeModal();
             }
         });
+
+        bindModalControls();
+        bindTabNavigation();
+        bindDevConsoleCommandInput();
         
         // Wait for everything to load, then initialize randomizer
         setTimeout(() => {
             // Always initialize randomizer for consistency, unless it's already been applied
-            if (!gameState.randomized) {
+            const hasAppliedRunSeed = !!(gameState.runSeed && gameState.runBlueprint);
+            if (!gameState.randomized || !hasAppliedRunSeed) {
                 console.log("Initializing randomizer for new game or reset...");
                 
                 // Initialize randomizer with player ID and loop count
@@ -1136,6 +1179,16 @@ function updateRates() {
                     }
                 }
                 // Handle other potential territory effects
+            }
+        }
+    }
+
+    // 4b. Apply current run seed mutators.
+    if (gameState.runModifiers && gameState.runModifiers.resourceRateMultipliers) {
+        for (const [resource, multiplier] of Object.entries(gameState.runModifiers.resourceRateMultipliers)) {
+            const bonusKey = `${normalizeResourceKey(resource)}RateBonus`;
+            if (gameState.globalMultipliers.hasOwnProperty(bonusKey)) {
+                gameState.globalMultipliers[bonusKey] *= multiplier;
             }
         }
     }
@@ -1700,6 +1753,7 @@ function researchTech(techId) {
 }
 
 function captureTerritory(territoryId) {
+    territoryId = normalizeTerritoryId(territoryId);
     const territory = gameState.territories[territoryId];
     if (!territory || territory.unlocked) return;
 
@@ -1735,16 +1789,24 @@ function captureTerritory(territoryId) {
         }
         territory.unlocked = true;
         territory.active = true; // Automatically activate on capture
+        const previousOwner = territory.owner || null;
+        territory.owner = "Player";
+        territory.controlled = true;
         addLogMessage(`Territory captured and activated: ${territory.name}.`);
+        if (window.aiDirector && typeof window.aiDirector.handleTerritoryCapture === "function") {
+            window.aiDirector.handleTerritoryCapture(territoryId, previousOwner, gameState);
+        }
         updateRates();
         updateResourceDisplay();
         updateTerritoriesDisplay(); // Refresh territory display
+        saveGame();
     } else {
         addLogMessage(`Insufficient resources to capture ${territory.name}.`);
     }
 }
 
 function activateTerritory(territoryId) {
+    territoryId = normalizeTerritoryId(territoryId);
     const territory = gameState.territories[territoryId];
     if (!territory || !territory.unlocked) return;
 
@@ -1754,6 +1816,7 @@ function activateTerritory(territoryId) {
     updateRates();
     updateResourceDisplay();
     updateTerritoriesDisplay(); // Refresh territory display
+    saveGame();
 }
 
 // --- UI Functions ---
@@ -1765,6 +1828,7 @@ function switchTab(tabId) {
     const tabContents = document.querySelectorAll(".tab-content");
     tabContents.forEach(content => {
         content.style.display = "none";
+        content.classList.remove("active");
     });
 
     // Deactivate all tabs
@@ -1777,6 +1841,7 @@ function switchTab(tabId) {
     const selectedTabContent = document.getElementById(tabId);
     if (selectedTabContent) {
         selectedTabContent.style.display = "block";
+        selectedTabContent.classList.add("active");
         console.log(`DEBUG: Displaying content for ${tabId}`);
     } else {
         console.error(`DEBUG: Content element not found for ${tabId}`);
@@ -1813,6 +1878,39 @@ function switchTab(tabId) {
             debugTechTree();
         }, 100);
     }
+}
+
+function bindTabNavigation() {
+    const tabsHeader = document.querySelector(".tabs-header");
+    if (!tabsHeader || tabsHeader.dataset.bound === "true") {
+        return;
+    }
+
+    tabsHeader.dataset.bound = "true";
+    tabsHeader.addEventListener("click", function(e) {
+        const tabButton = e.target.closest("button[data-tab]");
+        if (!tabButton) {
+            return;
+        }
+
+        e.preventDefault();
+        switchTab(tabButton.dataset.tab);
+    });
+}
+
+function bindModalControls() {
+    const modal = document.getElementById("modal");
+    if (!modal || modal.dataset.bound === "true") {
+        return;
+    }
+
+    modal.dataset.bound = "true";
+    modal.addEventListener("click", function(e) {
+        if (e.target.closest(".modal-close")) {
+            e.preventDefault();
+            closeModal();
+        }
+    });
 }
 
 // Function to toggle achievements display
@@ -3948,10 +4046,81 @@ function playSound(soundFile) {
     }
 }
 
+function applyRunSeedBlueprintToGame(options = {}) {
+    if (!window.randomizer || !gameState) {
+        addLogMessage("Randomizer is not ready yet.");
+        return false;
+    }
+
+    const {
+        advanceLoop = false,
+        reroll = false,
+        timestamp = Date.now()
+    } = options;
+
+    gameState.playerId = gameState.playerId || `player${Math.floor(Math.random() * 10000)}`;
+    if (advanceLoop) {
+        gameState.loopCount = (gameState.loopCount || 0) + 1;
+    }
+
+    if (reroll || !window.randomizer.getBlueprint || !window.randomizer.getBlueprint().seed) {
+        window.randomizer.init(gameState.playerId, gameState.loopCount || 0, timestamp);
+    }
+
+    const success = window.randomizer.applyToGameState(gameState);
+    if (!success) {
+        addLogMessage("Randomizer failed to apply.");
+        return false;
+    }
+
+    normalizeGameState(gameState);
+    gameState.randomized = true;
+    gameState.runSeed = window.randomizer.seed;
+    gameState.runBlueprint = window.randomizer.getBlueprint ? window.randomizer.getBlueprint() : window.randomizer.blueprint;
+
+    updateRates();
+    saveGame();
+    updateAllDisplays();
+
+    if (typeof window.randomizer.renderUI === "function" && document.getElementById("randomizer-tab")) {
+        window.randomizer.renderUI("randomizer-tab");
+    }
+
+    addLogMessage(`Run seed applied: ${gameState.runSeed}`);
+    return true;
+}
+
+function rerollRunSeed(advanceLoop = false) {
+    return applyRunSeedBlueprintToGame({ advanceLoop, reroll: true });
+}
+
+function bindDevConsoleCommandInput() {
+    const input = document.getElementById("dev-console-input");
+    if (!input || input.dataset.bound === "true") {
+        return;
+    }
+
+    input.dataset.bound = "true";
+    input.addEventListener("keydown", function(e) {
+        if (e.key !== "Enter") {
+            return;
+        }
+
+        e.preventDefault();
+        const command = input.value.trim();
+        if (!command) {
+            return;
+        }
+
+        input.value = "";
+        handleDevCommand(command);
+    });
+}
+
 // Handle dev console commands
 function handleDevCommand(command) {
-    const parts = command.split(" ");
-    const cmd = parts[0].toLowerCase();
+    const parts = command.trim().split(/\s+/);
+    const cmd = (parts[0] || "").toLowerCase();
     const args = parts.slice(1);
 
     addLogMessage(`DEV CMD: ${command}`);
@@ -3960,11 +4129,12 @@ function handleDevCommand(command) {
         switch (cmd) {
             case "add":
                 if (args.length === 2) {
-                    const resource = args[0];
+                    const resource = normalizeResourceKey(args[0]);
                     const amount = parseFloat(args[1]);
                     if (gameState.resources.hasOwnProperty(resource) && !isNaN(amount)) {
                         gameState.resources[resource] += amount;
                         updateResourceDisplay();
+                        saveGame();
                         addLogMessage(`Added ${amount} ${resource}.`);
                     } else {
                         addLogMessage(`Invalid resource or amount.`);
@@ -3975,11 +4145,12 @@ function handleDevCommand(command) {
                 break;
             case "set":
                  if (args.length === 2) {
-                    const resource = args[0];
+                    const resource = normalizeResourceKey(args[0]);
                     const amount = parseFloat(args[1]);
                     if (gameState.resources.hasOwnProperty(resource) && !isNaN(amount)) {
                         gameState.resources[resource] = amount;
                         updateResourceDisplay();
+                        saveGame();
                         addLogMessage(`Set ${resource} to ${amount}.`);
                     } else {
                         addLogMessage(`Invalid resource or amount.`);
@@ -3996,12 +4167,18 @@ function handleDevCommand(command) {
                             gameState.techTree[techId].completed = true;
                         }
                         updateTechTreeDisplay();
+                        saveGame();
                         addLogMessage("Unlocked all tech.");
                     } else if (type === "allterritories") {
                          for (const territoryId in gameState.territories) {
                             gameState.territories[territoryId].unlocked = true;
+                            gameState.territories[territoryId].active = true;
+                            gameState.territories[territoryId].owner = "Player";
                         }
                         updateTerritoriesDisplay();
+                        updateRates();
+                        updateResourceDisplay();
+                        saveGame();
                         addLogMessage("Unlocked all territories.");
                     } else {
                         addLogMessage(`Unknown unlock type: ${type}. Try 'alltech' or 'allterritories'.`);
@@ -4010,16 +4187,92 @@ function handleDevCommand(command) {
                     addLogMessage(`Usage: unlock <type>`);
                 }
                 break;
+            case "mission":
+                if (args[0] === "accept" && args[1]) {
+                    acceptMission(normalizeMissionId(args[1]));
+                } else if (args[0] === "start" && args[1]) {
+                    startMission(normalizeMissionId(args[1]));
+                } else if (args[0] === "complete" && args[1]) {
+                    const missionId = normalizeMissionId(args[1]);
+                    if (gameState.missions && gameState.missions.activeMission === missionId) {
+                        gameState.missions.missionStartTime = Date.now() - ((gameState.missions.availableMissions[missionId]?.duration || 0) * 1000);
+                    }
+                    (window.gameCompleteMission || completeMission)(missionId);
+                } else {
+                    addLogMessage("Usage: mission <accept|start|complete> <missionId>");
+                }
+                break;
+            case "faction":
+                if (args[0] === "contact" && args[1]) {
+                    const factionId = normalizeFactionId(args.slice(1).join(" "));
+                    if (typeof window.contactFaction === "function") {
+                        window.contactFaction(factionId, gameState);
+                        addLogMessage(`Contacted ${factionId}.`);
+                    } else {
+                        addLogMessage("Faction contact system is not ready yet.");
+                    }
+                } else if (args.length === 2 && !isNaN(parseFloat(args[1]))) {
+                    const factionId = normalizeFactionId(args[0]);
+                    if (gameState.factionStanding && Object.prototype.hasOwnProperty.call(gameState.factionStanding, factionId)) {
+                        gameState.factionStanding[factionId] = Math.max(-100, Math.min(100, parseFloat(args[1])));
+                        saveGame();
+                        updateAllDisplays();
+                        addLogMessage(`Set ${factionId} standing to ${gameState.factionStanding[factionId]}.`);
+                    } else {
+                        addLogMessage(`Unknown faction: ${args[0]}`);
+                    }
+                } else {
+                    addLogMessage("Usage: faction <faction> <standing> OR faction contact <faction>");
+                }
+                break;
+            case "seed":
+            case "randomizer":
+            case "reroll":
+                if (cmd === "reroll" || args[0] === "reroll" || args[0] === "current") {
+                    rerollRunSeed(false);
+                } else if (args[0] === "next" || args[0] === "loop") {
+                    rerollRunSeed(true);
+                } else if (args[0] === "apply") {
+                    applyRunSeedBlueprintToGame();
+                } else {
+                    addLogMessage("Usage: seed <reroll|next|apply>");
+                }
+                break;
+            case "tab":
+                if (args[0]) {
+                    const tabAliases = {
+                        boosts: "boosts-tab",
+                        items: "items-tab",
+                        tech: "techTree-tab",
+                        techtree: "techTree-tab",
+                        territories: "territories-tab",
+                        map: "territories-tab",
+                        missions: "missions-tab",
+                        factions: "factions-tab",
+                        randomizer: "randomizer-tab"
+                    };
+                    const tabId = tabAliases[args[0].toLowerCase()] || args[0];
+                    if (document.getElementById(tabId)) {
+                        switchTab(tabId);
+                        addLogMessage(`Switched to ${tabId}.`);
+                    } else {
+                        addLogMessage(`Unknown tab: ${args[0]}`);
+                    }
+                } else {
+                    addLogMessage("Usage: tab <boosts|items|tech|territories|missions|factions|randomizer>");
+                }
+                break;
             case "reset":
                 if (args.length === 1 && args[0].toLowerCase() === "save") {
-                    localStorage.removeItem("cyberpunkIdleGameSave");
+                    localStorage.removeItem("earth2049_saveGame");
+                    localStorage.removeItem("runBlueprint");
                     addLogMessage("Save file cleared. Refresh page to start new game.");
                 } else {
                     addLogMessage(`Usage: reset save`);
                 }
                 break;
             case "help":
-                addLogMessage("Available commands: add, set, unlock, reset, help");
+                addLogMessage("Available commands: add, set, unlock, mission, faction, seed, randomizer, reroll, tab, reset, help");
                 break;
             default:
                 addLogMessage(`Unknown command: ${cmd}`);
@@ -4931,6 +5184,7 @@ window.addEventListener('load', function() {
 
 // Accept a mission through dialogue and add it to queue
 function acceptMission(missionId) {
+    missionId = normalizeMissionId(missionId);
     console.log(`Accepting mission: ${missionId}`);
     if (!gameState || !gameState.missions) {
         console.error("gameState or gameState.missions is not defined!");
@@ -4983,6 +5237,7 @@ function acceptMission(missionId) {
 
 // Start a mission from the queue
 function startMission(missionId) {
+    missionId = normalizeMissionId(missionId);
     console.log(`Starting mission: ${missionId}`);
     if (!gameState || !gameState.missions) {
         console.error("gameState or gameState.missions is not defined!");
@@ -5011,16 +5266,18 @@ function startMission(missionId) {
     // Check if player can afford the mission cost
     if (mission.cost) {
         for (const resource in mission.cost) {
-            if (gameState.resources[resource] === undefined || 
-                gameState.resources[resource] < mission.cost[resource]) {
-                addLogMessage(`Not enough ${resource} to start this mission.`);
+            const resourceKey = normalizeResourceKey(resource);
+            if (gameState.resources[resourceKey] === undefined || 
+                gameState.resources[resourceKey] < mission.cost[resource]) {
+                addLogMessage(`Not enough ${resourceKey} to start this mission.`);
                 return;
             }
         }
 
         // Deduct the cost
         for (const resource in mission.cost) {
-            gameState.resources[resource] -= mission.cost[resource];
+            const resourceKey = normalizeResourceKey(resource);
+            gameState.resources[resourceKey] -= mission.cost[resource];
             updateResourceDisplay(); // Update resource display after deduction
         }
     }
@@ -5039,10 +5296,12 @@ function startMission(missionId) {
 
     // Update UI
     updateMissionsDisplay();
+    saveGame();
 }
 
 // Complete a mission and get rewards
 function completeMission(missionId) {
+    missionId = normalizeMissionId(missionId);
     console.log(`Completing mission: ${missionId}`);
     if (!gameState || !gameState.missions) {
         console.error("gameState or gameState.missions is not defined!");
@@ -5072,13 +5331,16 @@ function completeMission(missionId) {
     if (mission.reward) {
         let rewardText = "Received: ";
         for (const resource in mission.reward) {
+            const resourceKey = normalizeResourceKey(resource);
             // Apply the reward
-            if (gameState.resources[resource] !== undefined) {
-                gameState.resources[resource] += mission.reward[resource];
-                rewardText += `${mission.reward[resource]} ${resource}, `;
+            if (gameState.resources[resourceKey] !== undefined) {
+                gameState.resources[resourceKey] += mission.reward[resource];
+                rewardText += `${mission.reward[resource]} ${resourceKey}, `;
                 
-                // Show particle effects for rewards
-                showResourceParticle(resource, mission.reward[resource]);
+                // Reward visuals are optional; missing effects should not block collection.
+                if (typeof showResourceParticle === "function") {
+                    showResourceParticle(resourceKey, mission.reward[resource]);
+                }
             }
         }
         rewardText = rewardText.slice(0, -2); // Remove trailing comma and space
@@ -5086,13 +5348,18 @@ function completeMission(missionId) {
     }
 
     // Apply faction reputation gain if specified
-    if (mission.factionId && mission.reputationGain && window.aiDirector) {
-        window.aiDirector.applyReputationChange(mission.factionId, mission.reputationGain, gameState);
-        addLogMessage(`Gained ${mission.reputationGain} reputation with ${mission.factionId} faction.`);
+    if (mission.factionId && mission.reputationGain) {
+        const factionId = normalizeFactionId(mission.factionId);
+        if (window.aiDirector && typeof window.aiDirector.applyReputationChange === "function") {
+            window.aiDirector.applyReputationChange(factionId, mission.reputationGain, gameState);
+        } else if (gameState.factionStanding && Object.prototype.hasOwnProperty.call(gameState.factionStanding, factionId)) {
+            gameState.factionStanding[factionId] = Math.max(-100, Math.min(100, gameState.factionStanding[factionId] + mission.reputationGain));
+        }
+        addLogMessage(`Gained ${mission.reputationGain} reputation with ${factionId} faction.`);
     }
 
     // Show completion dialogue if available
-    if (mission.completionDialogueId) {
+    if (mission.completionDialogueId && window.dialogues && window.dialogues[mission.completionDialogueId]) {
         showDialogue(mission.completionDialogueId);
     }
 
@@ -5113,6 +5380,8 @@ function completeMission(missionId) {
     // Update UI
     updateMissionsDisplay();
     updateResourceDisplay();
+    updateAllDisplays();
+    saveGame();
 }
 
 // Update the missions tab display
@@ -5412,6 +5681,7 @@ Object.assign(window.dialogues, missionDialogues);
 // Expose mission functions to the global scope
 window.acceptMission = acceptMission;
 window.startMission = startMission;
+window.gameCompleteMission = completeMission;
 window.completeMission = completeMission;
 
 // Display a notification to the user
@@ -5456,8 +5726,18 @@ function showNotification(title, message) {
 // Expose global functions
 window.acceptMission = acceptMission;
 window.startMission = startMission;
+window.gameCompleteMission = completeMission;
 window.completeMission = completeMission;
 window.showNotification = showNotification;
+window.applyRunSeedBlueprintToGame = applyRunSeedBlueprintToGame;
+window.rerollRunSeed = rerollRunSeed;
+window.handleDevCommand = handleDevCommand;
+
+window.addEventListener("load", function restoreGameMissionCompletionHandler() {
+    if (typeof window.gameCompleteMission === "function") {
+        window.completeMission = window.gameCompleteMission;
+    }
+});
         
 // Function to load missions from CSV file
 function loadMissionsFromCSV() {
@@ -5473,21 +5753,20 @@ function loadMissionsFromCSV() {
             for (let i = 1; i < lines.length; i++) {
                 if (!lines[i].trim()) continue; // Skip empty lines
                 
-                const line = lines[i].replace(/"/g, ''); // Remove quotes
-                const columns = line.split(',');
+                const columns = parseCSVLine(lines[i]).map(cleanGameText);
                 
                 if (columns.length < 9) continue; // Skip incomplete lines
                 
-                const missionId = columns[0].trim();
-                const missionName = columns[1].trim();
-                const missionLocation = columns[2].trim();
-                const missionDuration = parseDuration(columns[3].trim());
-                const missionCooldown = parseDuration(columns[4].trim());
-                const missionSlots = parseInt(columns[5].trim()) || 1;
-                const missionCost = parseCost(columns[6].trim());
-                const missionReward = parseReward(columns[7].trim());
-                const missionExtraSuccess = columns[8].trim();
-                const missionFailure = columns.length > 9 ? columns[9].trim() : "";
+                const missionId = normalizeMissionId(columns[0]);
+                const missionName = columns[1];
+                const missionLocation = columns[2];
+                const missionDuration = parseDuration(columns[3]);
+                const missionCooldown = parseDuration(columns[4]);
+                const missionSlots = parseInt(columns[5], 10) || 1;
+                const missionCost = parseCost(columns[6]);
+                const missionReward = parseReward(columns[7]);
+                const missionExtraSuccess = columns[8];
+                const missionFailure = columns.length > 9 ? columns[9] : "";
                 
                 // Determine the faction based on the location
                 const factionId = determineFactionFromLocation(missionLocation);
@@ -5508,8 +5787,8 @@ function loadMissionsFromCSV() {
                     factionId: factionId,
                     reputationGain: 5, // Default reputation gain
                     unlocked: false, // Missions need to be offered by factions first
-                    dialogueId: `mission_${missionId.toLowerCase()}`,
-                    completionDialogueId: `mission_${missionId.toLowerCase()}_complete`
+                    dialogueId: `mission_${missionId.toLowerCase().replace(/[^a-z0-9]/g, "_")}`,
+                    completionDialogueId: `mission_${missionId.toLowerCase().replace(/[^a-z0-9]/g, "_")}_complete`
                 };
                 
                 // Add to gameState
@@ -5520,6 +5799,8 @@ function loadMissionsFromCSV() {
                 console.log(`Loaded mission: ${missionId} - ${missionName}`);
             }
             
+            normalizeGameState(gameState);
+            updateMissionsDisplay();
             console.log(`Loaded ${Object.keys(gameState.missions.availableMissions).length} missions`);
         })
         .catch(error => {
@@ -5527,15 +5808,42 @@ function loadMissionsFromCSV() {
         });
 }
 
+function parseCSVLine(line) {
+    const values = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+
+        if (char === '"' && inQuotes && nextChar === '"') {
+            current += '"';
+            i++;
+        } else if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            values.push(current);
+            current = "";
+        } else {
+            current += char;
+        }
+    }
+
+    values.push(current);
+    return values;
+}
+
 // Helper function to parse duration strings like "5 min" into seconds
 function parseDuration(durationStr) {
+    durationStr = cleanGameText(durationStr);
     if (!durationStr) return 60; // Default 1 minute
     
-    const parts = durationStr.split(' ');
-    if (parts.length !== 2) return 60;
-    
-    const value = parseFloat(parts[0]);
-    const unit = parts[1].toLowerCase();
+    const match = durationStr.match(/(\d+(?:\.\d+)?)\s*([a-z]+)/i);
+    if (!match) return 60;
+
+    const value = parseFloat(match[1]);
+    const unit = match[2].toLowerCase();
     
     if (unit.includes('min')) {
         return value * 60; // Convert minutes to seconds
@@ -5550,6 +5858,7 @@ function parseDuration(durationStr) {
 
 // Helper function to parse cost strings like "250 Data" or "800 Data + 500 Energy"
 function parseCost(costStr) {
+    costStr = cleanGameText(costStr);
     if (!costStr) return { followers: 10 }; // Default cost
     
     const cost = {};
@@ -5557,18 +5866,13 @@ function parseCost(costStr) {
     
     for (let part of parts) {
         part = part.trim();
-        const match = part.match(/(\d+)\s+(\w+)/);
+        const match = part.match(/(\d+(?:\.\d+)?)\s*([kK])?\s+([a-zA-Z ]+)/);
         if (match) {
-            const value = parseInt(match[1]);
-            let resource = match[2].toLowerCase();
+            const value = parseFloat(match[1]) * (match[2] ? 1000 : 1);
+            let resource = match[3].toLowerCase().trim();
             
             // Map CSV resource names to our resource keys
-            if (resource === 'data') resource = 'techPoints';
-            else if (resource === 'energy') resource = 'energy';
-            else if (resource === 'credits') resource = 'credits';
-            else if (resource === 'followers') resource = 'followers';
-            else if (resource === 'tech' || resource === 'tech points' || resource === 'tech pts') resource = 'techPoints';
-            else if (resource === 'morale') resource = 'influence';
+            resource = normalizeResourceKey(resource);
             
             cost[resource] = value;
         }
@@ -5584,6 +5888,7 @@ function parseCost(costStr) {
 
 // Helper function to parse reward strings like "+1 K Followers" or "+300 Data"
 function parseReward(rewardStr) {
+    rewardStr = cleanGameText(rewardStr);
     if (!rewardStr) return { credits: 50 }; // Default reward
     
     const reward = {};
@@ -5598,16 +5903,16 @@ function parseReward(rewardStr) {
         let resource = '';
         
         // Format: "+1 K Followers" or "+300 Data"
-        const kMatch = part.match(/(\d+(?:\.\d+)?)\s*K\s+(\w+)/i);
+        const kMatch = part.match(/(\d+(?:\.\d+)?)\s*K\s+([a-zA-Z ]+)/i);
         if (kMatch) {
             value = parseFloat(kMatch[1]) * 1000;
-            resource = kMatch[2].toLowerCase();
+            resource = kMatch[2].toLowerCase().trim();
         } else {
             // Format: "+300 Data"
-            const normalMatch = part.match(/(\d+(?:\.\d+)?)\s+(\w+)/);
+            const normalMatch = part.match(/(\d+(?:\.\d+)?)\s+([a-zA-Z ]+)/);
             if (normalMatch) {
                 value = parseFloat(normalMatch[1]);
-                resource = normalMatch[2].toLowerCase();
+                resource = normalMatch[2].toLowerCase().trim();
             } else {
                 // Format: Special effects like "2 × Productivity (60 s)"
                 // These are handled by extraSuccess and don't convert to a direct resource
@@ -5616,12 +5921,7 @@ function parseReward(rewardStr) {
         }
         
         // Map CSV resource names to our resource keys
-        if (resource === 'data') resource = 'techPoints';
-        else if (resource === 'energy') resource = 'energy';
-        else if (resource === 'credits') resource = 'credits';
-        else if (resource === 'followers') resource = 'followers';
-        else if (resource === 'tech' || resource === 'tech points' || resource === 'tech pts') resource = 'techPoints';
-        else if (resource === 'morale') resource = 'influence';
+        resource = normalizeResourceKey(resource);
         
         reward[resource] = value;
     }

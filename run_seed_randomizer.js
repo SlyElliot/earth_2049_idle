@@ -44,10 +44,11 @@ class PRNG {
         this.state ^= this.state >> BigInt(12);
         this.state ^= this.state << BigInt(25);
         this.state ^= this.state >> BigInt(27);
+        this.state &= BigInt("0xFFFFFFFFFFFFFFFF");
         
         // Convert to floating point between 0 and 1
-        const result = Number((this.state * BigInt("0x2545F4914F6CDD1D")) >> BigInt(32)) / 0x100000000;
-        return Math.abs(result);
+        const mixed = (this.state * BigInt("0x2545F4914F6CDD1D")) & BigInt("0xFFFFFFFFFFFFFFFF");
+        return Number((mixed >> BigInt(32)) & BigInt("0xFFFFFFFF")) / 0x100000000;
     }
     
     // Generate an integer between min and max (inclusive)
@@ -600,17 +601,22 @@ class RunSeedRandomizer {
         
         console.log("Applying randomizer blueprint to game state:", this.blueprint);
         
-        // Initialize faction standings if it doesn't exist
-        if (!gameState.factionStanding) {
-            console.log("Creating factionStanding object in gameState");
-            gameState.factionStanding = {
-                "ShillZ": 0,
-                "GIGACORP": -50,
-                "Muskers": 0,
-                "Cryptids": 0,
-                "The Bots": 0
-            };
-        }
+        const canonicalFactions = (window.earth2049Canon && window.earth2049Canon.canonicalFactions) ||
+            ["ShillZ", "GIGACORP", "Muskers", "Cryptids", "The Bots"];
+
+        gameState.factionStanding = {};
+        canonicalFactions.forEach(faction => {
+            gameState.factionStanding[faction] = faction === "GIGACORP" ? -30 : 0;
+        });
+
+        gameState.runSeed = this.seed;
+        gameState.runBlueprint = this.blueprint;
+        gameState.runModifiers = {
+            resourceRateMultipliers: {},
+            diplomacy: {},
+            director: {},
+            missionRates: {}
+        };
         
         // Apply sector ownership
         if (gameState.territories) {
@@ -653,12 +659,18 @@ class RunSeedRandomizer {
         // Apply diplomacy
         console.log("Applying diplomacy settings");
         for (const [faction, relations] of Object.entries(this.blueprint.diplomacy)) {
+            const normalizedFaction = normalizeRandomizerFactionId(faction);
+            if (!gameState.runModifiers.diplomacy[normalizedFaction]) {
+                gameState.runModifiers.diplomacy[normalizedFaction] = { allies: [], rivals: [] };
+            }
+
             // Set initial standings
             // Allies get positive standing
             relations.allies.forEach(ally => {
                 ally = normalizeRandomizerFactionId(ally);
+                gameState.runModifiers.diplomacy[normalizedFaction].allies.push(ally);
                 if (gameState.factionStanding.hasOwnProperty(ally)) {
-                    gameState.factionStanding[ally] = 20;
+                    gameState.factionStanding[ally] = Math.max(gameState.factionStanding[ally], 20);
                     console.log(`Set ${ally} as ally (standing: 20)`);
                 }
             });
@@ -666,8 +678,9 @@ class RunSeedRandomizer {
             // Rivals get negative standing
             relations.rivals.forEach(rival => {
                 rival = normalizeRandomizerFactionId(rival);
+                gameState.runModifiers.diplomacy[normalizedFaction].rivals.push(rival);
                 if (gameState.factionStanding.hasOwnProperty(rival)) {
-                    gameState.factionStanding[rival] = -20;
+                    gameState.factionStanding[rival] = Math.min(gameState.factionStanding[rival], -20);
                     console.log(`Set ${rival} as rival (standing: -20)`);
                 }
             });
@@ -675,6 +688,9 @@ class RunSeedRandomizer {
         
         // Apply mind control and disposition
         gameState.mindControlIndex = this.blueprint.mindControlIndex;
+        if (gameState.resources && Object.prototype.hasOwnProperty.call(gameState.resources, "mindControlCounter")) {
+            gameState.resources.mindControlCounter = this.blueprint.mindControlIndex;
+        }
         gameState.turingDisposition = this.blueprint.turingDisposition;
         console.log(`Set mindControlIndex to ${gameState.mindControlIndex}`);
         console.log(`Set turingDisposition to ${gameState.turingDisposition}`);
@@ -685,31 +701,24 @@ class RunSeedRandomizer {
             // Apply effect based on category
             if (mutator.category === "Economy") {
                 // Apply economic effects
-                if (gameState.rates) {
-                    for (const [resource, multiplier] of Object.entries(mutator.effect)) {
-                        if (gameState.rates[resource]) {
-                            gameState.rates[resource] *= multiplier;
-                        }
-                    }
+                for (const [resource, multiplier] of Object.entries(mutator.effect || {})) {
+                    gameState.runModifiers.resourceRateMultipliers[resource] = multiplier;
                 }
             } else if (mutator.category === "Territory") {
                 // Apply territory effects
                 // Example: mission spawn rates
-                gameState.missionRateMultipliers = gameState.missionRateMultipliers || {};
                 for (const [key, value] of Object.entries(mutator.effect)) {
-                    gameState.missionRateMultipliers[key] = value;
+                    gameState.runModifiers.missionRates[key] = value;
                 }
             } else if (mutator.category === "Director") {
                 // Apply AI Director effects
-                gameState.directorModifiers = gameState.directorModifiers || {};
                 for (const [key, value] of Object.entries(mutator.effect)) {
-                    gameState.directorModifiers[key] = value;
+                    gameState.runModifiers.director[key] = value;
                 }
             } else if (mutator.category === "Diplomacy") {
                 // Apply diplomacy effects
-                gameState.diplomacyModifiers = gameState.diplomacyModifiers || {};
                 for (const [key, value] of Object.entries(mutator.effect)) {
-                    gameState.diplomacyModifiers[key] = value;
+                    gameState.runModifiers.diplomacy[key] = value;
                 }
             }
             
@@ -837,7 +846,8 @@ class RunSeedRandomizer {
                 
                 <!-- Controls -->
                 <div class="randomizer-controls">
-                    <button class="randomizer-button" id="randomizer-simulate-btn">Simulate Next Loop</button>
+                    <button class="randomizer-button" id="randomizer-reroll-btn">Reroll Current Run</button>
+                    <button class="randomizer-button" id="randomizer-simulate-btn">Reroll Next Loop</button>
                     <button class="randomizer-button" id="randomizer-save-btn">Save Blueprint</button>
                     <button class="randomizer-button" id="randomizer-apply-btn">Apply to Game</button>
                 </div>
@@ -848,17 +858,31 @@ class RunSeedRandomizer {
         container.innerHTML = html;
         
         // Add event listeners
+        const rerollBtn = document.getElementById('randomizer-reroll-btn');
+        if (rerollBtn) {
+            rerollBtn.addEventListener('click', () => {
+                if (window.rerollRunSeed) {
+                    window.rerollRunSeed(false);
+                } else {
+                    const loopIndex = window.gameState?.loopCount || 0;
+                    this.init(window.gameState?.playerId || 'player1', loopIndex, Date.now());
+                    this.applyToGameState(window.gameState);
+                    this.renderUI(containerId);
+                }
+            });
+        }
+
         const simulateBtn = document.getElementById('randomizer-simulate-btn');
         if (simulateBtn) {
             simulateBtn.addEventListener('click', () => {
-                // Get current loop index
-                const loopIndex = (window.gameState?.loopCount || 0) + 1;
-                
-                // Re-initialize with new loop
-                this.init('player1', loopIndex, Date.now());
-                
-                // Update UI
-                this.renderUI(containerId);
+                if (window.rerollRunSeed) {
+                    window.rerollRunSeed(true);
+                } else {
+                    const loopIndex = (window.gameState?.loopCount || 0) + 1;
+                    this.init(window.gameState?.playerId || 'player1', loopIndex, Date.now());
+                    this.applyToGameState(window.gameState);
+                    this.renderUI(containerId);
+                }
             });
         }
         
@@ -874,7 +898,11 @@ class RunSeedRandomizer {
         if (applyBtn) {
             applyBtn.addEventListener('click', () => {
                 if (window.gameState) {
-                    this.applyToGameState(window.gameState);
+                    if (window.applyRunSeedBlueprintToGame) {
+                        window.applyRunSeedBlueprintToGame();
+                    } else {
+                        this.applyToGameState(window.gameState);
+                    }
                     alert('Applied to game state!');
                 } else {
                     alert('Game state not available');
