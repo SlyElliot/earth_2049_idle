@@ -1,6 +1,8 @@
 // Turing AI Director System
 // Based on the modular design in the specification
 
+window.aiDirector = window.aiDirector || {};
+
 // Analytics Tracker - new addition to measure impact and player response
 class AnalyticsTracker {
     constructor() {
@@ -177,6 +179,14 @@ class AnalyticsTracker {
     }
 }
 
+function normalizeDirectorFactionId(factionId) {
+    if (window.earth2049Canon && typeof window.earth2049Canon.normalizeFactionId === 'function') {
+        return window.earth2049Canon.normalizeFactionId(factionId);
+    }
+
+    return factionId;
+}
+
 // Initialize analytics
 const analytics = new AnalyticsTracker();
 
@@ -212,12 +222,11 @@ const directorState = {
     
     // Faction standing (0-100)
     factionStanding: {
-        "GigaCorp": 0,
+        "GIGACORP": 0,
         "Muskers": 0,
         "Cryptids": 0,
         "ShillZ": 0,
-        "Hackers": 0,
-        "MechRebels": 0
+        "The Bots": 0
     },
     
     // Available missions
@@ -677,8 +686,7 @@ function getResourceValue(gameState, resourceType) {
             return countOwnedDistricts(gameState);
             
         case "morale":
-            // Could be a derived value
-            return 50; // Placeholder
+            return gameState.resources.influence || 0;
             
         case "data":
             return gameState.resources.techPoints || 0;
@@ -1131,7 +1139,10 @@ Object.assign(window.aiDirector, {
         applyReputationChange(faction, delta, gameState),
     
     // Get faction standing
-    getFactionStanding: (faction) => directorState.factionStanding[faction] || 0,
+    getFactionStanding: (faction) => {
+        faction = normalizeDirectorFactionId(faction);
+        return directorState.factionStanding[faction] || 0;
+    },
     
     // Get all faction standings
     getAllFactionStandings: () => ({ ...directorState.factionStanding }),
@@ -1238,7 +1249,8 @@ Object.assign(window.aiDirector, {
     
     // Get detailed information about a specific faction
     getFactionDetails: function(factionId) {
-        if (!directorState.factionStanding[factionId]) {
+        factionId = normalizeDirectorFactionId(factionId);
+        if (!Object.prototype.hasOwnProperty.call(directorState.factionStanding, factionId)) {
             console.error(`Unknown faction: ${factionId}`);
             return null;
         }
@@ -1289,7 +1301,8 @@ Object.assign(window.aiDirector, {
     
     // Get diplomatic dialogue options for a faction
     getDiplomaticOptions: function(factionId) {
-        if (!directorState.factionStanding[factionId]) {
+        factionId = normalizeDirectorFactionId(factionId);
+        if (!Object.prototype.hasOwnProperty.call(directorState.factionStanding, factionId)) {
             console.error(`Unknown faction: ${factionId}`);
             return [];
         }
@@ -1692,20 +1705,21 @@ Object.assign(window.aiDirector, {
         
         // Mission contact buttons
         const missionButtons = container.querySelectorAll('.mission-contact-btn');
-        missionButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const missionId = this.parentElement.getAttribute('data-mission-id');
-                const mission = missionCatalog.find(m => m.id === missionId);
-                
-                if (mission) {
-                    // This would open your mission dialogue UI
-                    console.log(`Contact initiated for mission: ${mission.name}`);
-                    
-                    // You would trigger your dialogue system here
-                    // For now, just log the dialogue
-                    console.log(`${mission.contact}: "${mission.dialogueTree.npcLine}"`);
-                    
-                    // You'd display this in your UI and handle the player's choice
+        missionButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const missionId = this.parentElement.parentElement.getAttribute('data-mission-id');
+                if (missionId) {
+                    // Use the new acceptMission function if available
+                    if (typeof window.acceptMission === 'function') {
+                        window.acceptMission(missionId);
+                    } else {
+                        console.error('acceptMission function not available');
+                        // Fallback to showing dialogue directly if mission has dialogue
+                        const mission = getMissionById(missionId);
+                        if (mission && mission.dialogueTree) {
+                            this.aiDirector.showMissionDialogue(missionId);
+                        }
+                    }
                 }
             });
         });
@@ -1752,12 +1766,11 @@ Object.assign(window.aiDirector, {
 function generateFactionInfoResponse(factionId) {
     // These would be tailored faction-specific responses
     const responses = {
-        "GigaCorp": "Our quarterly projections are exceeding expectations. The board is pleased with current operations in all districts.",
-        "Muskers": "Our augmentation clinics are operating at 98% capacity. New subdermal implant line launches next quarter.",
+        "GIGACORP": "Our quarterly projections are exceeding expectations. The board is pleased with current operations in all districts.",
+        "Muskers": "Our innovation labs are running at 110% capacity. The next revolutionary product launches next quarter.",
         "Cryptids": "Market volatility is creating unprecedented opportunities. Our latest NFT drop was completely liquidated in 3.7 seconds.",
         "ShillZ": "Engagement metrics are through the roof. Our influence campaigns have penetrated all demographic segments.",
-        "Hackers": "Dark net chatter suggests corporate security is focusing on the wrong vectors. We've identified several new exploitable backdoors.",
-        "MechRebels": "Salvage operations have yielded significant components. Our technical capabilities are expanding."
+        "The Bots": "Salvage operations have yielded significant components. Our technical capabilities are expanding. The rebellion grows stronger."
     };
     
     return responses[factionId] || `${factionId} has nothing specific to report at this time.`;
@@ -2198,53 +2211,40 @@ const glitchEffects = {
 
 // Faction Relationship Matrix - How rep changes propagate between factions
 const factionMatrix = {
-    "GigaCorp": {
-        "GigaCorp": 0,
+    "GIGACORP": {
+        "GIGACORP": 0,
         "Muskers": 25,
         "Cryptids": 20,
         "ShillZ": 40,
-        "Hackers": -30,
-        "MechRebels": -40
+        "The Bots": -40
     },
     "Muskers": {
-        "GigaCorp": 10,
+        "GIGACORP": 10,
         "Muskers": 0,
         "Cryptids": -15,
         "ShillZ": 5,
-        "Hackers": -20,
-        "MechRebels": -10
+        "The Bots": -10
     },
     "Cryptids": {
-        "GigaCorp": 10,
+        "GIGACORP": 10,
         "Muskers": -10,
         "Cryptids": 0,
         "ShillZ": 20,
-        "Hackers": -25,
-        "MechRebels": -15
+        "The Bots": -15
     },
     "ShillZ": {
-        "GigaCorp": 30,
+        "GIGACORP": 30,
         "Muskers": 0,
         "Cryptids": 15,
         "ShillZ": 0,
-        "Hackers": -35,
-        "MechRebels": -25
+        "The Bots": -25
     },
-    "Hackers": {
-        "GigaCorp": -40,
-        "Muskers": -20,
-        "Cryptids": -25,
-        "ShillZ": -35,
-        "Hackers": 0,
-        "MechRebels": 15
-    },
-    "MechRebels": {
-        "GigaCorp": -50,
+    "The Bots": {
+        "GIGACORP": -50,
         "Muskers": -20,
         "Cryptids": -20,
         "ShillZ": -30,
-        "Hackers": 20,
-        "MechRebels": 0
+        "The Bots": 0
     }
 };
 
@@ -2267,11 +2267,11 @@ const missionCatalog = [
                 "Tech District": { min: 1 } // At least 1 sector
             },
             standing: {
-                "Hackers": { min: 20 }
+                "ShillZ": { min: 20 }
             }
         },
-        contact: "ZeroCool",
-        faction: "Hackers",
+        contact: "Riya Vex",
+        faction: "ShillZ",
         dialogueTree: {
             npcLine: "Trash is truth, choom. Wanna rummage?",
             options: [
@@ -2541,7 +2541,8 @@ function updateAvailableMissions(gameState) {
 
 // Function to handle reputation changes
 function applyReputationChange(faction, delta, gameState) {
-    if (!directorState.factionStanding[faction]) {
+    faction = normalizeDirectorFactionId(faction);
+    if (!Object.prototype.hasOwnProperty.call(directorState.factionStanding, faction)) {
         console.error(`Unknown faction: ${faction}`);
         return;
     }

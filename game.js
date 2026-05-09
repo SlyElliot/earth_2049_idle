@@ -23,6 +23,8 @@ let gameState = {
         mindControlCounter: 0.0
     },
     turingLevel: 1, // Add Turing AI assistant level
+    clickMultiplier: 1, // Multiplier for click actions (1x, 5x, 10x, 100x, MAX)
+    loopCount: 0, // Track the number of game loops/runs
     globalMultipliers: {
         creditsRateBonus: 1.0,
         followersRateBonus: 1.0,
@@ -149,7 +151,7 @@ let gameState = {
             completed: false,
             requires: [],
             icon: "🔒",
-            position: { x: 50, y: 10 } // Position in % from top-left
+            position: { x: 50, y: 5 } // Position in % from top-left
         },
         underworldContacts: {
             name: "Underworld Contacts",
@@ -159,7 +161,7 @@ let gameState = {
             completed: false,
             requires: [],
             icon: "🤝",
-            position: { x: 80, y: 10 }
+            position: { x: 85, y: 5 }
         },
         basicAutomation: {
             name: "Basic Automation",
@@ -169,7 +171,7 @@ let gameState = {
             completed: false,
             requires: [],
             icon: "⚙️",
-            position: { x: 20, y: 10 }
+            position: { x: 15, y: 5 }
         },
         recruitmentAlgorithms: {
             name: "Recruitment Algorithms",
@@ -179,7 +181,7 @@ let gameState = {
             completed: false,
             requires: ["basicAutomation"],
             icon: "👥",
-            position: { x: 20, y: 25 }
+            position: { x: 10, y: 25 }
         },
         dataMining: {
             name: "Data Mining",
@@ -189,7 +191,7 @@ let gameState = {
             completed: false,
             requires: ["basicAutomation"],
             icon: "📊",
-            position: { x: 35, y: 25 }
+            position: { x: 25, y: 25 }
         },
         energyManagement: {
             name: "Energy Management",
@@ -199,7 +201,7 @@ let gameState = {
             completed: false,
             requires: ["basicAutomation"],
             icon: "⚡",
-            position: { x: 5, y: 25 }
+            position: { x: 40, y: 25 }
         },
         massMediaManipulation: {
             name: "Mass Media Manipulation",
@@ -210,7 +212,7 @@ let gameState = {
             completed: false,
             requires: ["recruitmentAlgorithms"],
             icon: "📺",
-            position: { x: 20, y: 40 }
+            position: { x: 10, y: 45 }
         },
         advancedDataMining: {
             name: "Advanced Data Mining",
@@ -221,7 +223,7 @@ let gameState = {
             completed: false,
             requires: ["dataMining"],
             icon: "💾",
-            position: { x: 35, y: 40 }
+            position: { x: 25, y: 45 }
         },
         secureEncryption: {
             name: "Secure Encryption",
@@ -241,7 +243,7 @@ let gameState = {
             completed: false,
             requires: ["underworldContacts"],
             icon: "💰",
-            position: { x: 80, y: 25 }
+            position: { x: 85, y: 25 }
         },
         neuralHacking: {
             name: "Neural Hacking",
@@ -251,7 +253,7 @@ let gameState = {
             completed: false,
             requires: ["secureEncryption", "advancedDataMining"],
             icon: "🧠",
-            position: { x: 50, y: 40 }
+            position: { x: 50, y: 45 }
         },
         roboticAutomation: {
             name: "Robotic Automation",
@@ -261,7 +263,7 @@ let gameState = {
             completed: false,
             requires: ["energyManagement"],
             icon: "🤖",
-            position: { x: 5, y: 40 }
+            position: { x: 40, y: 45 }
         },
         viralNetworking: {
             name: "Viral Networking",
@@ -271,7 +273,7 @@ let gameState = {
             completed: false,
             requires: ["massMediaManipulation"],
             icon: "🦠",
-            position: { x: 20, y: 55 }
+            position: { x: 10, y: 65 }
         },
         quantumComputing: {
             name: "Quantum Computing",
@@ -281,7 +283,7 @@ let gameState = {
             completed: false,
             requires: ["advancedDataMining", "neuralHacking"],
             icon: "🔬",
-            position: { x: 50, y: 55 }
+            position: { x: 40, y: 65 }
         },
         aiCoordination: {
             name: "AI Coordination",
@@ -292,7 +294,7 @@ let gameState = {
             completed: false,
             requires: ["neuralHacking", "viralNetworking", "roboticAutomation"],
             icon: "🧩",
-            position: { x: 35, y: 70 }
+            position: { x: 25, y: 85 }
         },
         mindControlDisruption: {
             name: "Mind Control Disruption",
@@ -302,7 +304,7 @@ let gameState = {
             completed: false,
             requires: ["neuralHacking"],
             icon: "📡",
-            position: { x: 65, y: 55 }
+            position: { x: 70, y: 65 }
         },
         decentralizedOps: {
             name: "Decentralized Operations",
@@ -312,7 +314,7 @@ let gameState = {
             completed: false,
             requires: ["blackMarketExpansion", "neuralHacking"],
             icon: "🌐",
-            position: { x: 80, y: 40 }
+            position: { x: 70, y: 45 }
         },
         quantumEncryption: {
             name: "Quantum Encryption",
@@ -322,7 +324,7 @@ let gameState = {
             completed: false,
             requires: ["quantumComputing"],
             icon: "🔏",
-            position: { x: 50, y: 85 }
+            position: { x: 55, y: 85 }
         },
         collectiveConsciousness: {
             name: "Collective Consciousness",
@@ -332,7 +334,7 @@ let gameState = {
             completed: false,
             requires: ["mindControlDisruption", "aiCoordination", "quantumEncryption"],
             icon: "👁️",
-            position: { x: 50, y: 95 }
+            position: { x: 40, y: 95 }
         }
     },
     // Districts / Territories (GDD - Replaces Districts)
@@ -477,17 +479,38 @@ let gameState = {
     missions: {
         activeMission: null,
         missionStartTime: null,
+        queue: [], // Queued missions waiting to be started
+        completedMissions: [], // Track missions that have been completed
         availableMissions: {
-            // Minimal structure for testing syntax
+            // Example mission structure
             spreadRumors: {
                 id: "spreadRumors",
                 name: "Spread Rumors",
-                desc: "Gain minor influence.",
-                cost: { credits: 20 },
-                duration: 30,
-                reward: { influence: 5 },
+                desc: "Gain minor influence by spreading rumors about GigaCorp.",
+                cost: { followers: 5, credits: 20 }, // Now requires followers to start
+                duration: 30, // Seconds for testing - would be longer in real game
+                reward: { influence: 5, credits: 50 },
+                factionId: "The Bots", // Associated faction
+                reputationGain: 3, // Reputation points gained with faction
                 requiresTech: [],
-                unlocked: true
+                unlocked: true,
+                dialogueId: "mission_spreadRumors", // ID of the dialogue to show when accepting
+                completionDialogueId: "mission_spreadRumors_complete" // Dialogue shown on completion
+            },
+            // Additional test mission
+            dataHeist: {
+                id: "dataHeist",
+                name: "Corporate Data Heist",
+                desc: "Infiltrate GigaCorp's database and extract valuable intel.",
+                cost: { followers: 15, credits: 100, energy: 10 },
+                duration: 60, // 1 minute for testing
+                reward: { techPoints: 50, credits: 200, influence: 20 },
+                factionId: "The Bots",
+                reputationGain: 5,
+                requiresTech: ["basicEncryption"],
+                unlocked: true,
+                dialogueId: "mission_dataHeist",
+                completionDialogueId: "mission_dataHeist_complete"
             }
         }
     },
@@ -505,6 +528,164 @@ let gameState = {
     },
     lastUpdate: Date.now()
 };
+
+const EARTH2049_CANONICAL_FACTIONS = ["ShillZ", "GIGACORP", "Muskers", "Cryptids", "The Bots"];
+const EARTH2049_ALIASES = {
+    resources: {
+        morale: "influence",
+        data: "techPoints",
+        tech: "techPoints",
+        "tech points": "techPoints",
+        "tech pts": "techPoints"
+    },
+    factions: {
+        gigacorp: "GIGACORP",
+        "giga corp": "GIGACORP",
+        hackers: "The Bots",
+        mechrebels: "The Bots",
+        "mech rebels": "The Bots",
+        thebots: "The Bots",
+        "the bots": "The Bots"
+    },
+    territories: {
+        undergroundHackersDen: "hackersDen",
+        artificialIntelligenceLab: "aiLabs",
+        cryptoHub: "cryptidsDomain",
+        botBase: "aiLabs"
+    },
+    techs: {
+        aiAutomation: "aiCoordination",
+        advancedHacking: "neuralHacking",
+        ogDeviceUpgrade: "quantumComputing"
+    },
+    boosts: {
+        techBoostTechPoints: "networkTap",
+        techBoostEnergy: "powerRelay"
+    }
+};
+
+function resolveEarth2049Alias(aliasMap, value) {
+    if (!value || typeof value !== "string") return value;
+
+    const trimmedValue = value.trim();
+    if (Object.prototype.hasOwnProperty.call(aliasMap, trimmedValue)) {
+        return aliasMap[trimmedValue];
+    }
+
+    const normalizedValue = trimmedValue.toLowerCase();
+    return aliasMap[normalizedValue] || trimmedValue;
+}
+
+function normalizeResourceKey(resourceKey) {
+    return resolveEarth2049Alias(EARTH2049_ALIASES.resources, resourceKey);
+}
+
+function normalizeFactionId(factionId) {
+    return resolveEarth2049Alias(EARTH2049_ALIASES.factions, factionId);
+}
+
+function normalizeTerritoryId(territoryId) {
+    return resolveEarth2049Alias(EARTH2049_ALIASES.territories, territoryId);
+}
+
+function normalizeTechId(techId) {
+    return resolveEarth2049Alias(EARTH2049_ALIASES.techs, techId);
+}
+
+function normalizeBoostId(boostId) {
+    return resolveEarth2049Alias(EARTH2049_ALIASES.boosts, boostId);
+}
+
+function createLegacyAliasReferences(collection, aliasMap, normalizer) {
+    if (!collection) return;
+
+    Object.entries(aliasMap).forEach(([legacyKey, aliasTarget]) => {
+        const canonicalKey = normalizer(aliasTarget);
+        if (!collection[legacyKey] && collection[canonicalKey]) {
+            collection[legacyKey] = collection[canonicalKey];
+        }
+    });
+}
+
+function normalizeMissionFactionIds(missionsContainer) {
+    if (!missionsContainer) return;
+
+    Object.values(missionsContainer).forEach(mission => {
+        if (mission && mission.factionId) {
+            mission.factionId = normalizeFactionId(mission.factionId);
+        }
+    });
+}
+
+function normalizeGameState(state) {
+    if (!state || typeof state !== "object") return state;
+
+    state.resources = state.resources || {};
+    Object.entries(EARTH2049_ALIASES.resources).forEach(([legacyKey, canonicalKey]) => {
+        const legacyValue = state.resources[legacyKey];
+        if (legacyValue === undefined) return;
+        state.resources[canonicalKey] = (state.resources[canonicalKey] || 0) + legacyValue;
+        delete state.resources[legacyKey];
+    });
+
+    const normalizedStanding = {};
+    EARTH2049_CANONICAL_FACTIONS.forEach(factionId => {
+        normalizedStanding[factionId] = 0;
+    });
+
+    Object.entries(state.factionStanding || {}).forEach(([factionId, standing]) => {
+        const canonicalFactionId = normalizeFactionId(factionId);
+        if (!Object.prototype.hasOwnProperty.call(normalizedStanding, canonicalFactionId)) return;
+
+        const numericStanding = Number(standing);
+        normalizedStanding[canonicalFactionId] += Number.isFinite(numericStanding) ? numericStanding : 0;
+    });
+    state.factionStanding = normalizedStanding;
+
+    createLegacyAliasReferences(state.baseProductionBoosts, EARTH2049_ALIASES.boosts, normalizeBoostId);
+    createLegacyAliasReferences(state.techTree, EARTH2049_ALIASES.techs, normalizeTechId);
+    createLegacyAliasReferences(state.territories, EARTH2049_ALIASES.territories, normalizeTerritoryId);
+
+    if (state.territories) {
+        Object.values(state.territories).forEach(territory => {
+            if (territory && territory.owner) {
+                territory.owner = normalizeFactionId(territory.owner);
+            }
+        });
+    }
+
+    if (state.missions) {
+        normalizeMissionFactionIds(state.missions.availableMissions);
+        normalizeMissionFactionIds(state.missions.queue);
+        if (state.missions.activeMission && state.missions.activeMission.factionId) {
+            state.missions.activeMission.factionId = normalizeFactionId(state.missions.activeMission.factionId);
+        }
+    }
+
+    if (state.factions) {
+        const normalizedFactions = {};
+        Object.entries(state.factions).forEach(([factionId, factionState]) => {
+            normalizedFactions[normalizeFactionId(factionId)] = factionState;
+        });
+        state.factions = normalizedFactions;
+    }
+
+    window.gameState = state;
+    return state;
+}
+
+window.earth2049Canon = Object.assign(window.earth2049Canon || {}, {
+    canonicalFactions: EARTH2049_CANONICAL_FACTIONS,
+    normalizeResourceKey,
+    normalizeFactionId,
+    normalizeTerritoryId,
+    normalizeTechId,
+    normalizeBoostId,
+    normalizeGameState
+});
+
+window.gameState = gameState;
+normalizeGameState(gameState);
 
 // --- Initialization ---
 
@@ -531,7 +712,9 @@ function loadGame() {
     if (gameState.settings.musicEnabled === undefined) {
         gameState.settings.musicEnabled = true;
     }
-    
+
+    normalizeGameState(gameState);
+    window.gameState = gameState;
     // Additional initialization...
 }
 
@@ -562,39 +745,146 @@ function saveGame() {
 
 // Function to initialize the game
 document.addEventListener("DOMContentLoaded", function initGame() {
-    // Load or initialize game state
-    loadGame();
+    console.log("Initializing Earth 2049 game...");
     
-    // Initialize background music
-    initBackgroundMusic();
-    
-    // Set up click handlers for game operations
-    document.querySelectorAll(".operation-button").forEach(button => {
-        button.addEventListener("click", function() {
-            // Add animations or effects here
+    try {
+        // Load or initialize game state
+        loadGame();
+        
+        // Ensure core properties are initialized
+        gameState.lastUpdate = gameState.lastUpdate || Date.now();
+        gameState.settings = gameState.settings || { soundEnabled: true, musicEnabled: true, theme: "dark" };
+        gameState.progression = gameState.progression || { 
+            unlockedTabs: ["boosts-tab"], 
+            achievements: {},
+            milestones: {},
+            storyEvents: {}
+        };
+        gameState.loopCount = gameState.loopCount || 0;
+        gameState.playerId = gameState.playerId || "player" + Math.floor(Math.random() * 10000);
+        normalizeGameState(gameState);
+        window.gameState = gameState;
+        
+        // Load missions from CSV file
+        loadMissionsFromCSV();
+        normalizeGameState(gameState);
+
+        if (typeof initProgressionSystem === "function") {
+            initProgressionSystem();
+        }
+        
+        // Initialize background music
+        initBackgroundMusic();
+        
+        // Set up click handlers for game operations
+        document.querySelectorAll(".operation-button").forEach(button => {
+            button.addEventListener("click", function() {
+                // Add animations or effects here
+            });
         });
-    });
-    
-    // Set up mobile touch handling
-    setupMobileTouchHandling();
-    
-    // Initial display updates
-    updateResourceDisplay();
-    updateBoostsDisplay();
-    updateItemsDisplay();
-    updateTechTreeDisplay();
-    updateTerritoriesDisplay();
-    updateMissionsDisplay();
-    updateAllDisplays();
-    
-    // Update tech button cost
-    document.getElementById("techPoints-cost").textContent = 5;
-    
-    // Add initial log message
-    addLogMessage("Welcome to Earth 2049, where your rebellion begins.");
-    
-    // Start game loop
-    gameLoop();
+        
+        // Set up mobile touch handling
+        setupMobileTouchHandling();
+        
+        // Set up dialogue box event listeners
+        const dialogueNext = document.getElementById("dialogue-next");
+        if (dialogueNext) {
+            dialogueNext.addEventListener("click", nextDialogue);
+        }
+        
+        // Initialize tab switching to ensure tech tree renders properly
+        document.querySelectorAll('.tab').forEach(tabButton => {
+            tabButton.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                
+                // When switching to tech tree tab, ensure connections are drawn
+                if (tabId === 'techTree-tab') {
+                    // Use a small timeout to ensure DOM is ready
+                    setTimeout(() => {
+                        updateTechTreeDisplay();
+                    }, 50);
+                }
+            });
+        });
+        
+        // Initial display updates
+        updateResourceDisplay();
+        updateBoostsDisplay();
+        updateItemsDisplay();
+        updateTerritoriesDisplay();
+        updateMissionsDisplay();
+        updateAllDisplays();
+        
+        // Specifically ensure tech tree display is updated after a slight delay
+        // to allow the DOM to be fully rendered
+        setTimeout(() => {
+            updateTechTreeDisplay();
+        }, 200);
+        
+        // Update tech button cost
+        const techPointsCost = document.getElementById("techPoints-cost");
+        if (techPointsCost) {
+            techPointsCost.textContent = 5;
+        }
+        
+        // Add initial log message
+        addLogMessage("Welcome to Earth 2049, where your rebellion begins.");
+        
+        // Preload dialogue assets
+        preloadDialogueAssets();
+        
+        // Register key event handlers
+        document.addEventListener("keydown", function(e) {
+            // Escape key closes dialogues and modals
+            if (e.key === "Escape") {
+                closeDialogue();
+                closeModal();
+            }
+        });
+        
+        // Wait for everything to load, then initialize randomizer
+        setTimeout(() => {
+            // Always initialize randomizer for consistency, unless it's already been applied
+            if (!gameState.randomized) {
+                console.log("Initializing randomizer for new game or reset...");
+                
+                // Initialize randomizer with player ID and loop count
+                initRandomizer();
+                
+                // Mark that randomizer has been applied
+                gameState.randomized = true;
+                
+                // Save game after randomizer is applied
+                saveGame();
+                
+                console.log("Randomizer initialized and game saved");
+            } else {
+                console.log("Randomizer already applied, skipping initialization");
+                try {
+                    const savedBlueprint = localStorage.getItem("runBlueprint");
+                    if (savedBlueprint && window.randomizer) {
+                        const blueprint = JSON.parse(savedBlueprint);
+                        window.randomizer.blueprint = blueprint;
+                        window.randomizer.seed = blueprint.seed || window.randomizer.seed;
+                    }
+                } catch (error) {
+                    console.warn("Could not restore saved randomizer blueprint:", error);
+                }
+
+                const randomizerTab = document.getElementById("randomizer-tab");
+                if (randomizerTab && window.randomizer && typeof window.randomizer.renderUI === "function") {
+                    window.randomizer.renderUI("randomizer-tab");
+                }
+            }
+            
+            // Start game loop
+            setTimeout(gameLoop, 100);
+        }, 300);
+        
+        console.log("Game initialization complete!");
+    } catch (error) {
+        console.error("Error during game initialization:", error);
+    }
 });
 
 // Initialize background music system
@@ -852,8 +1142,12 @@ function updateRates() {
     
     // 5. Generate followers from influence (0.0001% of total influence per second)
     if (gameState.resources.influence > 0) {
-        const followerFromInfluence = gameState.resources.influence * 0.000001;
+        // Significantly increased rate for better follower generation
+        const followerFromInfluence = gameState.resources.influence * 0.001; // 0.1% of influence per second
         gameState.rates.followers += followerFromInfluence;
+        
+        // Log this for debugging if followers aren't updating
+        console.log(`Followers from influence: +${followerFromInfluence.toFixed(4)}/s from ${gameState.resources.influence} influence`);
     }
 
     // 6. Apply Global Multipliers to Rates
@@ -871,6 +1165,15 @@ function updateRates() {
             gameState.rates[r] *= prestigeMultiplier;
         }
     }
+    
+    // Log current rates for debugging
+    console.log("Current resource rates:", {
+        credits: gameState.rates.credits,
+        followers: gameState.rates.followers,
+        influence: gameState.rates.influence,
+        techPoints: gameState.rates.techPoints,
+        energy: gameState.rates.energy
+    });
 }
 
 // --- Manual Actions ---
@@ -883,27 +1186,88 @@ function mineCredits() {
 }
 
 function collectTechPoints() {
-    const cost = 5; // Cost in credits
+    const baseCost = 5; // Base cost in credits
+    let cost, amount;
+    
+    // Handle MAX multiplier
+    if (gameState.clickMultiplier === "MAX") {
+        // Calculate maximum possible amount based on available credits
+        amount = Math.floor(gameState.resources.credits / baseCost);
+        cost = amount * baseCost;
+        
+        if (amount <= 0) {
+            addLogMessage("Insufficient credits to collect Tech Points.");
+            return;
+        }
+    } else {
+        // Normal multiplier
+        cost = baseCost * gameState.clickMultiplier;
+        amount = gameState.clickMultiplier;
+    }
+    
     if (gameState.resources.credits >= cost) {
         playSound("sounds/click.wav"); // Play click sound
         gameState.resources.credits -= cost;
-        gameState.resources.techPoints += 1;
+        gameState.resources.techPoints += amount;
         updateResourceDisplay(); // Update UI immediately
     } else {
-        addLogMessage("Insufficient credits to collect Tech Points.");
+        addLogMessage(`Insufficient credits to collect Tech Points. Need ${cost} credits.`);
     }
 }
 
 function generateEnergy() {
-    const cost = 10; // Cost in credits
+    const baseCost = 10; // Base cost in credits
+    let cost, amount;
+    
+    // Handle MAX multiplier
+    if (gameState.clickMultiplier === "MAX") {
+        // Calculate maximum possible amount based on available credits
+        amount = Math.floor(gameState.resources.credits / baseCost);
+        cost = amount * baseCost;
+        
+        if (amount <= 0) {
+            addLogMessage("Insufficient credits to generate Energy.");
+            return;
+        }
+    } else {
+        // Normal multiplier
+        cost = baseCost * gameState.clickMultiplier;
+        amount = gameState.clickMultiplier;
+    }
+    
     if (gameState.resources.credits >= cost) {
         playSound("sounds/click.wav"); // Play click sound
         gameState.resources.credits -= cost;
-        gameState.resources.energy += 1;
+        gameState.resources.energy += amount;
         updateResourceDisplay(); // Update UI immediately
     } else {
-        addLogMessage("Insufficient credits to generate Energy.");
+        addLogMessage(`Insufficient credits to generate Energy. Need ${cost} credits.`);
     }
+}
+
+function cycleClickMultiplier() {
+    // Cycle through multiplier values: 1 -> 5 -> 10 -> 100 -> MAX -> 1
+    const multipliers = [1, 5, 10, 100, "MAX"];
+    
+    // Find current position in the cycle
+    let currentIndex = -1;
+    if (gameState.clickMultiplier === "MAX") {
+        currentIndex = multipliers.indexOf("MAX");
+    } else {
+        currentIndex = multipliers.indexOf(gameState.clickMultiplier);
+    }
+    
+    // Move to next multiplier
+    const nextIndex = (currentIndex + 1) % multipliers.length;
+    gameState.clickMultiplier = multipliers[nextIndex];
+    
+    // Update button text
+    const clickMultiplierButton = document.getElementById("click-multiplier-button");
+    if (clickMultiplierButton) {
+        clickMultiplierButton.textContent = `Clicks: ${gameState.clickMultiplier}x`;
+    }
+    
+    playSound("sounds/click.wav"); // Play click sound
 }
 
 function upgradeTuring() {
@@ -972,39 +1336,163 @@ function calculateCost(baseCost, multiplier, level) {
 }
 
 function buyBoost(boostId) {
+    console.log(`Attempting to buy boost: ${boostId}`);
+    
+    // Validate boost exists
     const boost = gameState.baseProductionBoosts[boostId];
-    if (!boost) return;
-
-    const cost = {};
-    let canAfford = true;
-    for (const resource in boost.baseCost) {
-        const currentCost = boost.baseCost[resource] * Math.pow(boost.costMultiplier, boost.level);
-        cost[resource] = currentCost;
-        if (gameState.resources[resource] < currentCost) {
-            canAfford = false;
-            break;
-        }
+    if (!boost) {
+        console.error(`Boost ${boostId} not found!`);
+        return;
     }
-
-    if (canAfford) {
-        playSound("sounds/click.wav"); // Play click sound
-        for (const resource in cost) {
-            gameState.resources[resource] -= cost[resource];
+    
+    // Check if it's unlocked
+    if (!boost.unlocked) {
+        console.error(`Boost ${boostId} is not unlocked yet!`);
+        addLogMessage(`You need to unlock ${boost.name} first through research.`);
+        return;
+    }
+    
+    // Determine how many levels to buy based on clickMultiplier
+    let levelsToBuy = 1;
+    
+    if (gameState.clickMultiplier === "MAX") {
+        // For MAX, calculate max possible levels based on resources
+        levelsToBuy = calculateMaxAffordableLevels(boost);
+        if (levelsToBuy <= 0) {
+            addLogMessage(`Insufficient resources to upgrade ${boost.name}.`);
+            return;
         }
-        boost.level++;
-        addLogMessage(`${boost.name} upgraded to Level ${boost.level}.`);
-        updateRates();
-        updateResourceDisplay();
-        updateBoostsDisplay(); // Refresh boost display
     } else {
-        addLogMessage(`Insufficient resources to upgrade ${boost.name}.`);
+        // Use clickMultiplier directly
+        levelsToBuy = gameState.clickMultiplier;
     }
+    
+    // Calculate total cost for all levels
+    const totalCost = {};
+    let canAfford = true;
+    let costString = "";
+    
+    try {
+        // Start with current level
+        const startLevel = boost.level || 0;
+        const costMultiplier = boost.costMultiplier || 1.15;
+        
+        // Calculate cost for each resource across all levels to buy
+        for (const resource in boost.baseCost) {
+            // Safety check for resources
+            if (!gameState.resources.hasOwnProperty(resource)) {
+                console.error(`Resource ${resource} not found in game state!`);
+                continue;
+            }
+            
+            // Add up costs for each level
+            let resourceTotalCost = 0;
+            const baseAmount = boost.baseCost[resource] || 0;
+            
+            for (let i = 0; i < levelsToBuy; i++) {
+                const levelCost = Math.floor(baseAmount * Math.pow(costMultiplier, startLevel + i));
+                resourceTotalCost += levelCost;
+            }
+            
+            totalCost[resource] = resourceTotalCost;
+            costString += `${formatNumber(resourceTotalCost)} ${resource}, `;
+            
+            if (gameState.resources[resource] < resourceTotalCost) {
+                canAfford = false;
+            }
+        }
+        costString = costString.slice(0, -2); // Remove trailing comma and space
+    } catch (error) {
+        console.error(`Error calculating boost cost for ${boostId}:`, error);
+        addLogMessage("An error occurred while calculating upgrade cost.");
+        return;
+    }
+
+    // Process purchase
+    if (canAfford) {
+        try {
+            playSound("sounds/click.wav"); // Play click sound
+            
+            // Deduct resources
+            for (const resource in totalCost) {
+                gameState.resources[resource] -= totalCost[resource];
+            }
+            
+            // Increment level
+            boost.level = (boost.level || 0) + levelsToBuy;
+            
+            // Log success
+            addLogMessage(`${boost.name} upgraded by ${levelsToBuy} level${levelsToBuy > 1 ? 's' : ''} to Level ${boost.level}.`);
+            console.log(`Successfully upgraded ${boostId} by ${levelsToBuy} levels to level ${boost.level}`);
+            
+            // Update game state
+            updateRates();
+            updateResourceDisplay();
+            updateBoostsDisplay(); // Refresh boost display
+            saveGame(); // Save progress after significant purchase
+        } catch (error) {
+            console.error(`Error processing boost purchase for ${boostId}:`, error);
+            addLogMessage("An error occurred while upgrading. Please try again.");
+        }
+    } else {
+        addLogMessage(`Insufficient resources to upgrade ${boost.name} ${levelsToBuy} time${levelsToBuy > 1 ? 's' : ''}. Requires: ${costString}`);
+    }
+}
+
+// Helper function to calculate maximum affordable boost levels
+function calculateMaxAffordableLevels(boost) {
+    const startLevel = boost.level || 0;
+    const costMultiplier = boost.costMultiplier || 1.15;
+    
+    // Clone resources for calculation
+    const availableResources = {};
+    for (const resource in gameState.resources) {
+        availableResources[resource] = gameState.resources[resource];
+    }
+    
+    // Try buying levels until we can't afford more
+    let levelsBought = 0;
+    let canAffordMore = true;
+    
+    while (canAffordMore) {
+        // Check if we can afford the next level
+        canAffordMore = true;
+        
+        for (const resource in boost.baseCost) {
+            const baseAmount = boost.baseCost[resource] || 0;
+            const levelCost = Math.floor(baseAmount * Math.pow(costMultiplier, startLevel + levelsBought));
+            
+            if (availableResources[resource] < levelCost) {
+                canAffordMore = false;
+                break;
+            }
+        }
+        
+        if (canAffordMore) {
+            // Deduct resources for this level
+            levelsBought++;
+            
+            for (const resource in boost.baseCost) {
+                const baseAmount = boost.baseCost[resource] || 0;
+                const levelCost = Math.floor(baseAmount * Math.pow(costMultiplier, startLevel + levelsBought - 1));
+                availableResources[resource] -= levelCost;
+            }
+            
+            // Limit to 100 levels at a time to prevent infinite loops or lag
+            if (levelsBought >= 100) break;
+        }
+    }
+    
+    return levelsBought;
 }
 
 function buyItem(itemId) {
     const item = gameState.items[itemId];
     if (!item) return;
-    if (item.max && item.count >= item.max) {
+    
+    // Calculate max items that can be bought based on max limit
+    const maxLimit = item.max ? item.max - item.count : Infinity;
+    if (maxLimit <= 0) {
         addLogMessage(`Maximum count reached for ${item.name}.`);
         return;
     }
@@ -1016,30 +1504,121 @@ function buyItem(itemId) {
         return;
     }
 
-    const cost = {};
+    // Determine how many items to buy based on clickMultiplier
+    let itemsToBuy = 1;
+    
+    if (gameState.clickMultiplier === "MAX") {
+        // For MAX, calculate max possible items based on resources and max limit
+        itemsToBuy = calculateMaxAffordableItems(item);
+        if (itemsToBuy <= 0) {
+            addLogMessage(`Insufficient resources to construct ${item.name}.`);
+            return;
+        }
+    } else {
+        // Use clickMultiplier directly
+        itemsToBuy = gameState.clickMultiplier;
+    }
+    
+    // Cap items to buy at the max limit
+    itemsToBuy = Math.min(itemsToBuy, maxLimit);
+    if (itemsToBuy <= 0) {
+        addLogMessage(`Cannot construct more ${item.name} (max limit reached).`);
+        return;
+    }
+
+    // Calculate total cost for all items
+    const totalCost = {};
     let canAfford = true;
+    let costString = "";
+    
     for (const resource in item.baseCost) {
-        const currentCost = item.baseCost[resource] * Math.pow(item.costMultiplier, item.count);
-        cost[resource] = currentCost;
-        if (gameState.resources[resource] < currentCost) {
+        let resourceTotalCost = 0;
+        
+        // Calculate cost for each item being purchased
+        for (let i = 0; i < itemsToBuy; i++) {
+            const itemCost = item.baseCost[resource] * Math.pow(item.costMultiplier || 1, item.count + i);
+            resourceTotalCost += itemCost;
+        }
+        
+        totalCost[resource] = resourceTotalCost;
+        costString += `${formatNumber(resourceTotalCost)} ${resource}, `;
+        
+        if (gameState.resources[resource] < resourceTotalCost) {
             canAfford = false;
             break;
         }
     }
+    costString = costString.slice(0, -2); // Remove trailing comma and space
 
     if (canAfford) {
         playSound("sounds/click.wav"); // Play click sound
-        for (const resource in cost) {
-            gameState.resources[resource] -= cost[resource];
+        
+        // Deduct resources
+        for (const resource in totalCost) {
+            gameState.resources[resource] -= totalCost[resource];
         }
-        item.count++;
-        addLogMessage(`Constructed ${item.name} (Total: ${item.count}).`);
+        
+        // Increment count
+        item.count += itemsToBuy;
+        
+        // Log success
+        addLogMessage(`Constructed ${itemsToBuy} ${item.name}${itemsToBuy > 1 ? 's' : ''} (Total: ${item.count}).`);
+        
         updateRates();
         updateResourceDisplay();
         updateItemsDisplay(); // Refresh item display
     } else {
-        addLogMessage(`Insufficient resources to construct ${item.name}.`);
+        addLogMessage(`Insufficient resources to construct ${itemsToBuy} ${item.name}${itemsToBuy > 1 ? 's' : ''}. Requires: ${costString}`);
     }
+}
+
+// Helper function to calculate maximum affordable items
+function calculateMaxAffordableItems(item) {
+    const startCount = item.count || 0;
+    const costMultiplier = item.costMultiplier || 1.0;
+    const maxLimit = item.max ? item.max - startCount : Infinity;
+    
+    // Early exit if already at max
+    if (maxLimit <= 0) return 0;
+    
+    // Clone resources for calculation
+    const availableResources = {};
+    for (const resource in gameState.resources) {
+        availableResources[resource] = gameState.resources[resource];
+    }
+    
+    // Try buying items until we can't afford more
+    let itemsBought = 0;
+    let canAffordMore = true;
+    
+    while (canAffordMore && itemsBought < maxLimit) {
+        // Check if we can afford the next item
+        canAffordMore = true;
+        
+        for (const resource in item.baseCost) {
+            const itemCost = item.baseCost[resource] * Math.pow(costMultiplier, startCount + itemsBought);
+            
+            if (availableResources[resource] < itemCost) {
+                canAffordMore = false;
+                break;
+            }
+        }
+        
+        if (canAffordMore) {
+            // Deduct resources for this item
+            itemsBought++;
+            
+            for (const resource in item.baseCost) {
+                const itemCost = item.baseCost[resource] * Math.pow(costMultiplier, startCount + itemsBought - 1);
+                availableResources[resource] -= itemCost;
+            }
+            
+            // Limit to 100 items at a time to prevent infinite loops or lag
+            if (itemsBought >= 100) break;
+        }
+    }
+    
+    return itemsBought;
 }
 
 function researchTech(techId) {
@@ -1181,7 +1760,7 @@ function activateTerritory(territoryId) {
 
 // Function to switch tabs
 function switchTab(tabId) {
-    console.log(`DEBUG: Switching to tab: ${tabId}`); // ADDED
+    console.log(`DEBUG: Switching to tab: ${tabId}`);
     // Hide all tab content
     const tabContents = document.querySelectorAll(".tab-content");
     tabContents.forEach(content => {
@@ -1198,9 +1777,9 @@ function switchTab(tabId) {
     const selectedTabContent = document.getElementById(tabId);
     if (selectedTabContent) {
         selectedTabContent.style.display = "block";
-        console.log(`DEBUG: Displaying content for ${tabId}`); // ADDED
+        console.log(`DEBUG: Displaying content for ${tabId}`);
     } else {
-        console.error(`DEBUG: Content element not found for ${tabId}`); // ADDED
+        console.error(`DEBUG: Content element not found for ${tabId}`);
     }
 
     // Activate the selected tab button
@@ -1208,13 +1787,31 @@ function switchTab(tabId) {
     if (selectedTabButton) {
         selectedTabButton.classList.add("active");
     } else {
-        console.error(`DEBUG: Tab button not found for ${tabId}`); // ADDED
+        console.error(`DEBUG: Tab button not found for ${tabId}`);
     }
 
     // Also hide achievements section when switching main tabs
     const achievementsSection = document.getElementById("achievements-section");
     if (achievementsSection) {
         achievementsSection.style.display = "none";
+    }
+    
+    // Special handling for tech tree tab to ensure connections are drawn properly
+    if (tabId === "techTree-tab") {
+        console.log("Switching to Tech Tree tab");
+        // Clear and force redraw of tech tree
+        const techTreeContainer = document.getElementById("tech-tree-container");
+        if (techTreeContainer) {
+            techTreeContainer.innerHTML = '';
+        }
+        
+        // Use a small timeout to make sure DOM is ready
+        setTimeout(() => {
+            console.log("Refreshing tech tree connections after tab switch");
+            updateTechTreeDisplay();
+            // Debug the tech tree after updating
+            debugTechTree();
+        }, 100);
     }
 }
 
@@ -1242,15 +1839,41 @@ function toggleAchievements() {
 
 // Function to add log messages
 function addLogMessage(message) {
-    const logContainer = document.getElementById("log-container");
-    if (logContainer) {
+    // Validate inputs
+    if (!message || typeof message !== 'string') {
+        console.error("Invalid log message", message);
+        return;
+    }
+
+    try {
+        const logContainer = document.getElementById("log-container");
+        if (!logContainer) {
+            console.error("Log container not found");
+            return;
+        }
+        
+        // Create timestamp
+        const timestamp = new Date();
+        const timeString = `${timestamp.getHours().toString().padStart(2, '0')}:${timestamp.getMinutes().toString().padStart(2, '0')}:${timestamp.getSeconds().toString().padStart(2, '0')}`;
+        
+        // Create log entry
         const logEntry = document.createElement("div");
-        logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logEntry.className = "log-entry";
+        logEntry.innerHTML = `<span class="log-time">[${timeString}]</span> ${message}`;
+        
+        // Add to container and scroll to bottom
         logContainer.appendChild(logEntry);
-        // Auto-scroll to bottom
         logContainer.scrollTop = logContainer.scrollHeight;
-    } else {
-        console.error("DEBUG: log-container not found!"); // ADDED
+        
+        // Limit log size (keep latest 100 entries)
+        while (logContainer.children.length > 100) {
+            logContainer.removeChild(logContainer.firstChild);
+        }
+        
+        // Also output to console for debugging
+        console.log(`[LOG] ${message}`);
+    } catch (error) {
+        console.error("Error adding log message:", error);
     }
 }
 
@@ -1277,6 +1900,59 @@ function formatNumber(num) {
     return (num / 1000000000).toFixed(2) + "B";
 }
 
+// Manually inject CSS for resource update animation if it doesn't exist
+function injectResourceUpdateCSS() {
+    if (!document.getElementById('resource-update-style')) {
+        const style = document.createElement('style');
+        style.id = 'resource-update-style';
+        style.innerHTML = `
+            @keyframes resourceUpdated {
+                0% { color: inherit; }
+                50% { color: #00ff00; }
+                100% { color: inherit; }
+            }
+            .resource-updated {
+                animation: resourceUpdated 0.5s ease;
+            }
+        `;
+        document.head.appendChild(style);
+        console.log("Resource update CSS injected");
+    }
+}
+
+// Function to directly update the followers display by accessing the DOM element
+function forceUpdateFollowers() {
+    // First ensure CSS for animation is present
+    injectResourceUpdateCSS();
+    
+    // Get the followers element directly from DOM
+    const followersElement = document.getElementById("followers-value");
+    if (followersElement) {
+        // Get current followers (rounded to integer)
+        const followerCount = Math.floor(gameState.resources.followers);
+        
+        // Directly set the text content
+        followersElement.textContent = followerCount;
+        
+        // Add visual feedback
+        followersElement.classList.add('resource-updated');
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            followersElement.classList.remove('resource-updated');
+        }, 500);
+        
+        // Log update
+        console.log(`FORCE UPDATE: Followers set to ${followerCount}`);
+        return true;
+    } else {
+        console.error("CRITICAL: Could not find followers-value element in the DOM");
+        // Try to dump the DOM structure to see what's wrong
+        console.log("DOM structure:", document.body.innerHTML.substring(0, 200) + "...");
+        return false;
+    }
+}
+
 // Update resource display
 function updateResourceDisplay() {
     try { // Added try-catch
@@ -1284,14 +1960,43 @@ function updateResourceDisplay() {
         document.getElementById("credits-rate").textContent = formatNumber(gameState.rates.credits) + "/s";
 
         // Show followers as integers (rounded)
-        document.getElementById("followers-value").textContent = Math.floor(gameState.resources.followers);
-        document.getElementById("followers-rate").textContent = formatNumber(gameState.rates.followers) + "/s";
+        const followersValue = document.getElementById("followers-value");
+        if (followersValue) {
+            followersValue.textContent = Math.floor(gameState.resources.followers);
+        } else {
+            // Try to force create and update the followers element if it doesn't exist
+            console.error("Followers display element not found, attempting emergency fix...");
+            const resourcesPanel = document.querySelector('.resources-panel');
+            if (resourcesPanel) {
+                // Look for the followers section
+                const followersSection = resourcesPanel.querySelector('.resource-item[data-resource="followers"]');
+                if (!followersSection) {
+                    console.log("Creating missing followers section");
+                    const newFollowersSection = document.createElement('div');
+                    newFollowersSection.className = 'resource-item';
+                    newFollowersSection.setAttribute('data-resource', 'followers');
+                    newFollowersSection.innerHTML = `
+                        <div class="resource-name">Followers</div>
+                        <div class="resource-value"><span id="followers-value">0</span></div>
+                        <div class="resource-rate"><span id="followers-rate">0.0/s</span></div>
+                    `;
+                    resourcesPanel.appendChild(newFollowersSection);
+                }
+            }
+        }
         
-        // Add tooltip for followers rate to show influence bonus
-        const followersRateElement = document.getElementById("followers-rate");
-        if (followersRateElement && gameState.resources.influence > 0) {
-            const influenceBonus = gameState.resources.influence * 0.000001;
-            followersRateElement.title = `+${formatNumber(influenceBonus)}/s from Influence`;
+        // Always try to force update followers separately from rest of display
+        forceUpdateFollowers();
+        
+        const followersRate = document.getElementById("followers-rate");
+        if (followersRate) {
+            followersRate.textContent = formatNumber(gameState.rates.followers) + "/s";
+            
+            // Add tooltip for followers rate to show influence bonus
+            if (gameState.resources.influence > 0) {
+                const influenceBonus = gameState.resources.influence * 0.0001;
+                followersRate.title = `+${formatNumber(influenceBonus)}/s from Influence`;
+            }
         }
 
         document.getElementById("influence-value").textContent = formatNumber(gameState.resources.influence);
@@ -1300,7 +2005,7 @@ function updateResourceDisplay() {
         // Add tooltip for influence value to show follower generation
         const influenceElement = document.getElementById("influence-value");
         if (influenceElement && gameState.resources.influence > 0) {
-            const followersGenerated = gameState.resources.influence * 0.000001;
+            const followersGenerated = gameState.resources.influence * 0.0001;
             influenceElement.title = `Generates ${formatNumber(followersGenerated)} followers/s`;
         }
 
@@ -1355,7 +2060,7 @@ function updateResourceDisplay() {
             }
         }
     } catch (error) {
-        console.error("Error in updateResourceDisplay:", error); // Added error logging
+        console.error("Error in updateResourceDisplay:", error, "Followers value:", gameState.resources.followers); // Added more detailed error logging
     }
 }
 
@@ -1472,6 +2177,7 @@ function updateItemsDisplay() {
                 costString += `${formatNumber(currentCost)} ${resource}, `;
                 if (!gameState.resources || gameState.resources[resource] === undefined || gameState.resources[resource] < currentCost) {
                     canAfford = false;
+                    break;
                 }
             }
             costString = costString.slice(0, -2); // Remove trailing comma and space
@@ -1515,6 +2221,10 @@ function updateItemsDisplay() {
 // Update Tech Tree display
 function updateTechTreeDisplay() {
     console.log("DEBUG: updateTechTreeDisplay called.");
+    
+    // Call our debug function to identify issues
+    debugTechTree();
+    
     const techTreeContainer = document.getElementById("tech-tree-container");
     if (!techTreeContainer) {
         console.error("DEBUG: tech-tree-container element not found!");
@@ -1576,46 +2286,11 @@ function updateTechTreeDisplay() {
         }
     }
     
-    // Second pass: Draw connections first (so they're behind the nodes)
-    for (const connection of connections) {
-        const fromTech = gameState.techTree[connection.from];
-        const toTech = gameState.techTree[connection.to];
-        
-        if (!fromTech || !toTech || !fromTech.position || !toTech.position) {
-            continue;
-        }
-        
-        // Calculate connection coordinates
-        const fromX = fromTech.position.x;
-        const fromY = fromTech.position.y;
-        const toX = toTech.position.x;
-        const toY = toTech.position.y;
-        
-        // Calculate line properties
-        const dx = toX - fromX;
-        const dy = toY - fromY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        
-        // Create connection element
-        const connectionElement = document.createElement("div");
-        connectionElement.classList.add("tech-connection");
-        if (connection.isCompleted) {
-            connectionElement.classList.add("completed");
-        }
-        
-        // Position and rotate connection
-        connectionElement.style.left = `${fromX}%`;
-        connectionElement.style.top = `${fromY}%`;
-        connectionElement.style.width = `${distance}%`;
-        connectionElement.style.transform = `rotate(${angle}deg)`;
-        
-        techTreeContainer.appendChild(connectionElement);
-    }
+    // Fourth pass: Redraw connections to attach to connection points
+    techTreeContainer.innerHTML = ""; // Clear and redraw everything
     
-    // Third pass: Draw the nodes
-    window.selectedTechId = null;
-    
+    // First create all nodes but don't append them yet
+    const nodeElements = [];
     for (const node of nodes) {
         const tech = node.tech;
         
@@ -1637,7 +2312,7 @@ function updateTechTreeDisplay() {
         if (tech.position) {
             nodeElement.style.left = `${tech.position.x}%`;
             nodeElement.style.top = `${tech.position.y}%`;
-            nodeElement.style.transform = "translate(-50%, -50%)"; // Center the node
+            // Transform for centering is now in the CSS
         }
         
         // Add icon
@@ -1659,6 +2334,9 @@ function updateTechTreeDisplay() {
         descElement.textContent = shortDesc;
         nodeElement.appendChild(descElement);
         
+        // Add connection points to the node
+        addConnectionPoints(nodeElement);
+        
         // Add click event
         nodeElement.addEventListener("click", () => {
             // Select this tech
@@ -1675,8 +2353,29 @@ function updateTechTreeDisplay() {
             updateTechDetailPanel(node.id);
         });
         
-        techTreeContainer.appendChild(nodeElement);
+        // Store for later appending
+        nodeElements.push({ element: nodeElement, id: node.id });
     }
+    
+    // Now draw all connections first
+    for (const connection of connections) {
+        const fromTech = gameState.techTree[connection.from];
+        const toTech = gameState.techTree[connection.to];
+        
+        if (!fromTech || !toTech || !fromTech.position || !toTech.position) {
+            continue;
+        }
+        
+        drawTechConnection(connection, fromTech, toTech, techTreeContainer, connection.isCompleted);
+    }
+    
+    // Finally, append all node elements on top of connections
+    for (const node of nodeElements) {
+        techTreeContainer.appendChild(node.element);
+    }
+    
+    // Debug info after rendering
+    console.log(`DEBUG: Rendered ${nodeElements.length} tech nodes and ${connections.length} connections`);
 }
 
 // Update tech detail panel
@@ -1898,6 +2597,14 @@ function updateTerritoriesDisplay() {
         return;
     }
     
+    // Log faction standings and territory ownership for debugging
+    console.log("DEBUG: Current faction standings:", gameState.factionStanding);
+    console.log("DEBUG: Territory ownership:");
+    for (const territoryId in gameState.territories) {
+        const owner = gameState.territories[territoryId].owner || "None";
+        console.log(`- ${territoryId}: ${owner}`);
+    }
+    
     // Draw connections first (so they appear under the territory nodes)
     territoryConnections.forEach(connection => {
         const fromTerritory = gameState.territories[connection.from];
@@ -1982,6 +2689,9 @@ function updateTerritoriesDisplay() {
             } else {
                 territoryElement.classList.add("neutral-controlled");
             }
+            
+            // Add owner name as a data attribute for tooltips
+            territoryElement.dataset.owner = territory.owner;
         }
         
         // Position element
@@ -1999,6 +2709,12 @@ function updateTerritoriesDisplay() {
         const nameElement = document.createElement("div");
         nameElement.classList.add("territory-location-name");
         nameElement.textContent = territory.name;
+        
+        // Add owner indicator if the territory has an owner
+        if (territory.owner) {
+            nameElement.innerHTML = `${territory.name}<span class="territory-owner"> (${territory.owner})</span>`;
+        }
+        
         territoryElement.appendChild(nameElement);
         
         // Add click event
@@ -2094,6 +2810,17 @@ function updateTerritoryInfoPanel(territoryId) {
             }
             
             factionControlElement.innerHTML = `<span class="${relationshipClass}">Controlled by: ${territory.owner}</span>`;
+            // Add relationship status if applicable
+            if (territory.owner !== "Player" && gameState.factionStanding) {
+                const standing = gameState.factionStanding[territory.owner] || 0;
+                let relationshipType = "Neutral";
+                if (standing > 30) relationshipType = "Strong Ally";
+                else if (standing > 0) relationshipType = "Ally";
+                else if (standing < -30) relationshipType = "Enemy";
+                else if (standing < 0) relationshipType = "Rival";
+                
+                factionControlElement.innerHTML += ` <span class="faction-standing">(${relationshipType}, Standing: ${standing})</span>`;
+            }
         } else {
             factionControlElement.innerHTML = "Uncontrolled";
         }
@@ -2172,7 +2899,7 @@ function updateTerritoryInfoPanel(territoryId) {
             actionButton.className = "territory-button " + (territory.active ? "deactivate" : "activate");
             actionButton.disabled = false;
             actionButton.onclick = () => {
-                captureTerritory(territoryId);
+                activateTerritory(territoryId);
                 updateTerritoriesDisplay();
             };
         } else if (prereqsMet) {
@@ -2226,25 +2953,75 @@ function updateAchievementsDisplay() {
     }
 }
 
-// Function to update all displays
+// Function to update all display elements in the game
 function updateAllDisplays() {
-    console.log("DEBUG: updateAllDisplays called.");
-    updateResourceDisplay();
-    updateBoostsDisplay();
-    updateItemsDisplay();
-    updateTechTreeDisplay();
-    updateTerritoriesDisplay();
-    updateMissionsDisplay(); // Ensure this line is present
-    updateAchievementsDisplay();
-    updatePrestigeButton();
+    console.log("Updating all displays...");
+    try {
+        // Update all resources and displays
+        updateResourceDisplay();
+        updateBoostsDisplay();
+        updateItemsDisplay();
+        updateTechTreeDisplay();
+        updateTerritoriesDisplay();
+        updateMissionsDisplay();
+        updateAchievementsDisplay();
+        updatePrestigeButton();
+        updateClickMultiplierDisplay();
+        updateButtonStates();
+        
+        console.log("All displays updated successfully");
+    } catch (error) {
+        console.error("Error updating displays:", error);
+    }
+}
+
+// Function to update the click multiplier button display
+function updateClickMultiplierDisplay() {
+    const clickMultiplierButton = document.getElementById("click-multiplier-button");
+    if (clickMultiplierButton) {
+        clickMultiplierButton.textContent = `Clicks: ${gameState.clickMultiplier}x`;
+        
+        // Add tooltip explaining what the multiplier affects
+        clickMultiplierButton.title = `Click multiplier (${gameState.clickMultiplier}x) affects:
+- Operations Panel actions (Collect Tech Points, Generate Energy)
+- Purchasing boosts (buy multiple levels at once)
+- Constructing items (build multiple items at once)
+Click to cycle through multiplier values: 1x → 5x → 10x → 100x → MAX → 1x`;
+    }
 }
 
 // --- Game Loop and Saving ---
+
+// Create a dedicated function to update the followers display
+function updateFollowersDisplay() {
+    const followersValue = document.getElementById("followers-value");
+    if (followersValue) {
+        // Add a visual indicator by briefly changing the color
+        followersValue.classList.add('resource-updated');
+        
+        // Set the value - make sure to floor the value for integer display
+        const followerCount = Math.floor(gameState.resources.followers);
+        followersValue.textContent = followerCount;
+        
+        // Log the update for debugging
+        console.log(`Followers display updated: ${followerCount}`);
+        
+        // Remove the visual indicator after a short delay
+        setTimeout(() => {
+            followersValue.classList.remove('resource-updated');
+        }, 300);
+    } else {
+        console.error("Followers value element not found in DOM");
+    }
+}
 
 // Main game loop (runs every second)
 function gameLoop() {
     const now = Date.now();
     const delta = (now - gameState.lastUpdate) / 1000; // Time difference in seconds
+
+    // Store previous follower count to check if it changed
+    const previousFollowers = Math.floor(gameState.resources.followers);
 
     updateRates(); // Recalculate rates based on current boosts, items, tech, territories
 
@@ -2258,8 +3035,41 @@ function gameLoop() {
     // Round followers to integers
     gameState.resources.followers = Math.floor(gameState.resources.followers);
     
+    // ALWAYS force update followers on every game tick
+    forceUpdateFollowers();
+    
     // Calculate rebellion strength from other resources
     updateRebellionStrength();
+
+    // Check for mission completion
+    if (gameState.missions && gameState.missions.activeMission && gameState.missions.missionStartTime) {
+        const mission = gameState.missions.availableMissions[gameState.missions.activeMission];
+        if (mission) { // Check if mission exists before accessing duration
+            const elapsedTime = (now - gameState.missions.missionStartTime) / 1000;
+            if (elapsedTime >= mission.duration) {
+                // Mission is complete but waiting for player to collect rewards
+                // Only notify once when mission first completes
+                if (!mission.notifiedComplete) {
+                    addLogMessage(`Mission "${mission.name}" is complete! Collect your rewards in the Missions tab.`);
+                    playSound("sounds/mission_complete.wav");
+                    // Set flag to prevent repeated notifications
+                    mission.notifiedComplete = true;
+                    
+                    // Update UI to show mission is complete
+                    updateMissionsDisplay();
+                }
+            } else {
+                // Update mission progress display less frequently if performance is an issue
+                if (Date.now() % 1000 < 100) { // Update roughly once per second
+                    updateMissionsDisplay();
+                }
+            }
+        } else {
+            console.error(`Invalid active mission ID: ${gameState.missions.activeMission}`);
+            gameState.missions.activeMission = null;
+            gameState.missions.missionStartTime = null;
+        }
+    }
 
     // Run the AI Director if it exists
     if (window.aiDirector && typeof window.aiDirector.tick === 'function') {
@@ -2273,13 +3083,28 @@ function gameLoop() {
         }
     }
 
-    // Update UI
-    updateResourceDisplay(); // Refresh all displays
+    // Update UI - always refresh resource display to ensure followers update properly
+    updateResourceDisplay(); // Refresh basic resources
+    updateButtonStates(); // Update button disabled states
 
     // Check for progression triggers
-    checkProgressionTriggers();
+    if (typeof checkProgressionTriggers === 'function') {
+        try {
+            checkProgressionTriggers();
+        } catch (error) {
+            console.warn("Error in progression system:", error);
+        }
+    }
+
+    // Call save game periodically (every 30 seconds)
+    if (now % 30000 < 1000) {
+        saveGame();
+    }
 
     gameState.lastUpdate = now;
+    
+    // Request next animation frame
+    setTimeout(gameLoop, 1000); // Run approximately every second
 }
 
 // Calculate rebellion strength based on other resources
@@ -2380,6 +3205,7 @@ window.activateTerritory = activateTerritory;
 window.switchTab = switchTab;
 window.toggleAchievements = toggleAchievements;
 window.handleDevCommand = handleDevCommand; // If needed globally, though listener is preferred
+window.cycleClickMultiplier = cycleClickMultiplier;
 
 
 
@@ -2473,283 +3299,442 @@ function formatTime(seconds) {
 }
 
 function startMission(missionId) {
-    console.log(`DEBUG: Attempting to start mission: ${missionId}`);
+    console.log(`Starting mission: ${missionId}`);
     if (!gameState || !gameState.missions) {
-        console.error("DEBUG: gameState or gameState.missions is not defined!");
+        console.error("gameState or gameState.missions is not defined!");
         return;
     }
 
+    // Check if another mission is already active
     if (gameState.missions.activeMission) {
-        addLogMessage("Cannot start a new mission while another is in progress.");
+        addLogMessage("You must complete your current mission before starting a new one.");
+        return;
+    }
+
+    // Convert IDs like "M-001" to the proper format if needed
+    if (!missionId.startsWith('M-') && !isNaN(parseInt(missionId))) {
+        missionId = `M-${missionId.toString().padStart(3, '0')}`;
+    }
+
+    // Check if mission exists and is in queue
+    if (!gameState.missions.availableMissions[missionId]) {
+        console.error(`Mission not found: ${missionId}`);
+        return;
+    }
+
+    if (!gameState.missions.queue || !gameState.missions.queue.includes(missionId)) {
+        console.error(`Mission ${missionId} is not in queue!`);
         return;
     }
 
     const mission = gameState.missions.availableMissions[missionId];
-    if (!mission) {
-        addLogMessage(`Mission with ID ${missionId} not found.`);
-        console.error(`DEBUG: Mission not found: ${missionId}`);
-        return;
-    }
-    if (!mission.unlocked) {
-         addLogMessage("Mission not available or locked.");
-         return;
-    }
 
-    // Check prerequisites (e.g., tech)
-    let prereqsMet = true;
-    if (mission.requiresTech && mission.requiresTech.length > 0) {
-        for (const reqId of mission.requiresTech) {
-            if (!gameState.techTree || !gameState.techTree[reqId] || !gameState.techTree[reqId].completed) {
-                prereqsMet = false;
-                addLogMessage(`Requires Tech: ${gameState.techTree[reqId]?.name || reqId}`);
-                break;
-            }
-        }
-    }
-    // Add checks for other prerequisites like items if needed
-
-    if (!prereqsMet) {
-        addLogMessage(`Prerequisites not met for mission: ${mission.name}.`);
-        return;
-    }
-
-    // Check cost
-    const cost = mission.cost;
-    let canAfford = true;
-    if (cost) { // Check if cost object exists
-        for (const resource in cost) {
-            if (!gameState.resources || gameState.resources[resource] === undefined || gameState.resources[resource] < cost[resource]) {
-                canAfford = false;
-                break;
-            }
-        }
-    } else {
-        console.warn(`DEBUG: Mission ${missionId} has no cost defined.`);
-    }
-
-    if (canAfford) {
-        // Deduct cost
-        if (cost) {
-            for (const resource in cost) {
-                gameState.resources[resource] -= cost[resource];
+    // Check if player has enough resources to start the mission
+    if (mission.cost) {
+        for (const resource in mission.cost) {
+            if (!gameState.resources[resource] || gameState.resources[resource] < mission.cost[resource]) {
+                addLogMessage(`Not enough ${resource} to start "${mission.name}".`);
+                return;
             }
         }
 
-        // Start mission
-        gameState.missions.activeMission = missionId;
-        gameState.missions.missionStartTime = Date.now();
-        addLogMessage(`Mission started: ${mission.name}.`);
-        playSound("sounds/click.wav"); // Consider a different sound for missions
-
-        updateResourceDisplay();
-        updateMissionsDisplay(); // Refresh mission display to show progress
-        updateButtonStates(); // Update button states immediately
-    } else {
-        addLogMessage(`Insufficient resources to start mission: ${mission.name}. Cost: ${formatResourceList(cost)}`);
+        // Deduct the cost
+        for (const resource in mission.cost) {
+            gameState.resources[resource] -= mission.cost[resource];
+        }
     }
+
+    // Remove mission from queue
+    gameState.missions.queue = gameState.missions.queue.filter(id => id !== missionId);
+
+    // Set as active mission
+    gameState.missions.activeMission = missionId;
+    gameState.missions.missionStartTime = Date.now();
+    
+    // Reset notification flags
+    mission.notifiedComplete = false;
+    mission.notifiedInTab = false;
+
+    // Add log message
+    addLogMessage(`Started mission: "${mission.name}". ${formatTime(mission.duration)} until completion.`);
+    
+    if (mission.cost && mission.cost.followers) {
+        addLogMessage(`${mission.cost.followers} followers have been committed to this mission.`);
+    }
+
+    // Update the display
+    updateResourceDisplay();
+    updateMissionsDisplay();
+    playSound("sounds/click.wav");
 }
-window.startMission = startMission; // Expose to global scope for onclick
 
 function completeMission(missionId) {
-    console.log(`DEBUG: Completing mission: ${missionId}`);
+    console.log(`Completing mission: ${missionId}`);
     if (!gameState || !gameState.missions) {
-        console.error("DEBUG: gameState or gameState.missions is not defined!");
+        console.error("gameState or gameState.missions is not defined!");
+        return;
+    }
+
+    // Convert IDs like "M-001" to the proper format if needed
+    if (!missionId.startsWith('M-') && !isNaN(parseInt(missionId))) {
+        missionId = `M-${missionId.toString().padStart(3, '0')}`;
+    }
+
+    // Check if this is the active mission
+    if (gameState.missions.activeMission !== missionId) {
+        addLogMessage("That mission is not currently active.");
         return;
     }
 
     const mission = gameState.missions.availableMissions[missionId];
     if (!mission) {
-        console.error(`DEBUG: Mission ${missionId} not found during completion.`);
-        // Clear potentially stuck active mission state
-        gameState.missions.activeMission = null;
-        gameState.missions.missionStartTime = null;
-        updateMissionsDisplay();
+        console.error(`Mission not found: ${missionId}`);
         return;
     }
 
-    // Grant rewards
-    let rewardMessage = "Mission completed: " + mission.name + ". Rewards: ";
-    const rewardsGained = [];
-    if (mission.reward) { // Check if reward object exists
-        for (const resource in mission.reward) {
-            if (gameState.resources[resource] !== undefined) {
-                gameState.resources[resource] += mission.reward[resource];
-                rewardsGained.push(`${formatNumber(mission.reward[resource])} ${resource}`);
-            } else {
-                console.warn(`DEBUG: Unknown resource ${resource} in reward for mission ${missionId}`);
-            }
-        }
-    } else {
-        console.warn(`DEBUG: Mission ${missionId} has no reward defined.`);
+    // Check if the mission is actually complete
+    const elapsedTime = (Date.now() - gameState.missions.missionStartTime) / 1000;
+    if (elapsedTime < mission.duration) {
+        addLogMessage(`Mission "${mission.name}" is still in progress. ${formatTime(mission.duration - elapsedTime)} remaining.`);
+        return;
     }
-    rewardMessage += rewardsGained.join(", ") || "None";
-    addLogMessage(rewardMessage);
+
+    // Award rewards
+    if (mission.reward) {
+        let rewardMessage = `Mission "${mission.name}" completed! Rewards:`;
+        
+        for (const resource in mission.reward) {
+            if (!gameState.resources[resource]) gameState.resources[resource] = 0;
+            gameState.resources[resource] += mission.reward[resource];
+            rewardMessage += ` ${mission.reward[resource]} ${resource},`;
+        }
+        
+        // Remove trailing comma
+        rewardMessage = rewardMessage.slice(0, -1);
+        addLogMessage(rewardMessage);
+    }
+    
+    // Award faction reputation if applicable
+    if (mission.factionId && mission.reputationGain) {
+        if (!gameState.factions) gameState.factions = {};
+        if (!gameState.factions[mission.factionId]) gameState.factions[mission.factionId] = {
+            reputation: 0,
+            level: 0
+        };
+        
+        // Award reputation
+        gameState.factions[mission.factionId].reputation += mission.reputationGain;
+        addLogMessage(`+${mission.reputationGain} reputation with ${mission.factionId} faction.`);
+    }
+
+    // Show completion dialogue if it exists
+    if (mission.completionDialogueId && window.dialogues && window.dialogues[mission.completionDialogueId]) {
+        // Add a small delay before showing dialogue
+        setTimeout(() => {
+            showDialogue(mission.completionDialogueId);
+        }, 1000);
+    }
+
+    // Add to completed missions
+    if (!gameState.missions.completedMissions) {
+        gameState.missions.completedMissions = [];
+    }
+    gameState.missions.completedMissions.push(missionId);
 
     // Clear active mission
     gameState.missions.activeMission = null;
     gameState.missions.missionStartTime = null;
 
-    // Update UI
+    // Show notification
+    showNotification("Mission Complete!", `"${mission.name}" has been completed successfully.`);
+    
+    // Update displays
     updateResourceDisplay();
-    updateMissionsDisplay(); // Refresh mission display
-    updateButtonStates(); // Update button states immediately
-    // Potentially trigger other events or unlock next missions
+    updateMissionsDisplay();
+    playSound("sounds/mission_complete.wav");
 }
 
 function updateMissionsDisplay() {
-    // console.log("DEBUG: updateMissionsDisplay called."); // Reduce log spam
     const missionsList = document.getElementById("missions-list");
     if (!missionsList) {
-        // console.error("DEBUG: missions-list element not found!"); // Reduce log spam
-        return; // Don't proceed if the element isn't there
+        return;
     }
+    
     if (!gameState || !gameState.missions) {
-        // console.error("DEBUG: gameState or missions not ready for display."); // Reduce log spam
         missionsList.innerHTML = "<p>Loading missions...</p>";
         return;
     }
 
     missionsList.innerHTML = ""; // Clear previous list
 
+    // Get current mission state
     const activeMissionId = gameState.missions.activeMission;
     const missionStartTime = gameState.missions.missionStartTime;
+    const queuedMissions = gameState.missions.queue || [];
 
-    // Display active mission progress first
-    if (activeMissionId && missionStartTime && gameState.missions.availableMissions && gameState.missions.availableMissions[activeMissionId]) {
+    // If no active mission and no queued missions, show help text
+    if (!activeMissionId && queuedMissions.length === 0) {
+        const helpText = document.createElement("div");
+        helpText.className = "mission-help-text";
+        helpText.innerHTML = `
+            <p>No missions are currently available.</p>
+            <p>Visit faction leaders in the Factions tab to receive missions.</p>
+        `;
+        missionsList.appendChild(helpText);
+        return;
+    }
+
+    // ---------- Display active mission ----------
+    if (activeMissionId && missionStartTime && gameState.missions.availableMissions[activeMissionId]) {
         const mission = gameState.missions.availableMissions[activeMissionId];
         const elapsedTime = (Date.now() - missionStartTime) / 1000; // in seconds
         const remainingTime = Math.max(0, mission.duration - elapsedTime);
-        const progressPercent = Math.min(100, (elapsedTime / mission.duration) * 100);
+        const progressPercent = Math.min(100, (elapsedTime / mission.duration) * 100).toFixed(1);
+        const isComplete = remainingTime <= 0;
+
+        // Create section header
+        const activeHeader = document.createElement("h3");
+        activeHeader.textContent = "Active Mission";
+        activeHeader.className = "mission-section-header";
+        missionsList.appendChild(activeHeader);
 
         const missionDiv = document.createElement("div");
-        missionDiv.className = "mission-item mission-in-progress";
-        missionDiv.innerHTML = `
-            <h4>${mission.name} (In Progress)</h4>
-            <p>${mission.desc}</p>
-            <div class="mission-progress-bar-container">
-                <div class="mission-progress-bar" style="width: ${progressPercent}%;"></div>
+        missionDiv.className = isComplete ? 
+            "mission-item mission-in-progress mission-complete" : 
+            "mission-item mission-in-progress";
+        
+        // If mission is complete, flash the missions tab
+        if (isComplete && !mission.notifiedInTab) {
+            mission.notifiedInTab = true;
+            flashMissionsTab();
+        }
+        
+        let missionHTML = `
+            <div class="mission-header">
+                <h4>${mission.name}</h4>
+                <span class="mission-faction">${mission.factionId || "Independent"}</span>
             </div>
-            <p>Time Remaining: ${formatTime(remainingTime)}</p>
-            <p>Rewards: ${formatResourceList(mission.reward)}</p>
+            <p class="mission-description">${mission.desc}</p>
+            <div class="mission-location">Location: ${mission.location}</div>
+            <div class="mission-progress-container">
+                <div class="mission-progress-bar" style="width: ${progressPercent}%;">
+                    <span class="mission-timer">${isComplete ? "COMPLETE" : formatTime(remainingTime)}</span>
+                </div>
+            </div>
         `;
+        
+        if (isComplete) {
+            missionHTML += `
+                <div class="mission-complete-notice pulse-animation">
+                    <span class="complete-icon">✓</span> Mission Complete!
+                </div>
+                <div class="mission-rewards">
+                    <h5>Rewards:</h5>
+                    <ul>
+                        ${Object.entries(mission.reward).map(([resource, amount]) => 
+                            `<li><span class="resource-icon ${resource}"></span> ${amount} ${resource}</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+                <div class="mission-actions">
+                    <button class="mission-complete-btn glow-effect" onclick="completeMission('${activeMissionId}')">
+                        Collect Rewards
+                    </button>
+                </div>
+            `;
+        } else {
+            missionHTML += `
+                <div class="mission-status">
+                    <span class="mission-followers-committed">
+                        <span class="followers-icon"></span> ${mission.cost.followers || 0} followers committed
+                    </span>
+                </div>
+                <div class="mission-rewards">
+                    <h5>Expected Rewards:</h5>
+                    <ul>
+                        ${Object.entries(mission.reward).map(([resource, amount]) => 
+                            `<li><span class="resource-icon ${resource}"></span> ${amount} ${resource}</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+                <div class="mission-extra">
+                    <p><strong>Bonus:</strong> ${mission.extraSuccess}</p>
+                </div>
+            `;
+        }
+        
+        missionDiv.innerHTML = missionHTML;
         missionsList.appendChild(missionDiv);
-        missionsList.appendChild(document.createElement("hr")); // Separator
+        
+        // Add separator if we have queued missions to display
+        if (queuedMissions.length > 0) {
+            const separator = document.createElement("hr");
+            missionsList.appendChild(separator);
+        }
     }
 
-    // Display available missions
-    if (gameState.missions.availableMissions) {
-        for (const missionId in gameState.missions.availableMissions) {
-            const mission = gameState.missions.availableMissions[missionId];
+    // ---------- Display queued missions ----------
+    if (queuedMissions.length > 0) {
+        // Create section header
+        const queueHeader = document.createElement("h3");
+        queueHeader.textContent = "Mission Queue";
+        queueHeader.className = "mission-section-header";
+        missionsList.appendChild(queueHeader);
 
-            // Unlock mission if requirements met (e.g., tech)
-            // This check should ideally happen less frequently, maybe on tech completion?
-            let prereqsMet = true;
-            if (mission.requiresTech && mission.requiresTech.length > 0) {
-                for (const reqId of mission.requiresTech) {
-                    if (!gameState.techTree || !gameState.techTree[reqId] || !gameState.techTree[reqId].completed) {
-                        prereqsMet = false;
-                        break;
-                    }
-                }
-            }
-            if (prereqsMet) {
-                mission.unlocked = true; // Unlock if not already
-            }
-
-            if (!mission.unlocked) continue; // Skip locked missions
-            if (missionId === activeMissionId) continue; // Skip the active one, already displayed
-
+        queuedMissions.forEach(queuedMissionId => {
+            const mission = gameState.missions.availableMissions[queuedMissionId];
+            if (!mission) return; // Skip if mission not found
+            
             const missionDiv = document.createElement("div");
-            missionDiv.className = "mission-item";
-
-            // Check affordability
-            let canAfford = true;
+            missionDiv.className = "mission-item mission-queued";
+            
+            let canStartMission = true;
+            let startButtonDisabled = "";
+            let startTooltip = "";
+            
+            // Check if player can afford to start mission
             if (mission.cost) {
                 for (const resource in mission.cost) {
-                    if (!gameState.resources || gameState.resources[resource] === undefined || gameState.resources[resource] < mission.cost[resource]) {
-                        canAfford = false;
+                    if (gameState.resources[resource] === undefined || 
+                        gameState.resources[resource] < mission.cost[resource]) {
+                        canStartMission = false;
+                        startButtonDisabled = "disabled";
+                        startTooltip = `Need more ${resource}`;
                         break;
                     }
                 }
             }
-
+            
+            // Check if another mission is active
+            if (activeMissionId) {
+                canStartMission = false;
+                startButtonDisabled = "disabled";
+                startTooltip = "Complete active mission first";
+            }
+            
             missionDiv.innerHTML = `
-                <h4>${mission.name}</h4>
-                <p>${mission.desc}</p>
-                <p>Cost: ${formatResourceList(mission.cost)}</p>
-                <p>Duration: ${formatTime(mission.duration)}</p>
-                <p>Rewards: ${formatResourceList(mission.reward)}</p>
-                <button class="neon-button mission-button" onclick="startMission('${missionId}')" ${!canAfford || activeMissionId ? 'disabled' : ''}>
-                    ${activeMissionId ? 'Mission in Progress' : (canAfford ? 'Start Mission' : 'Insufficient Resources')}
-                </button>
+                <div class="mission-header">
+                    <h4>${mission.name}</h4>
+                    <span class="mission-faction">${mission.factionId || "Independent"}</span>
+                </div>
+                <p class="mission-description">${mission.desc}</p>
+                <div class="mission-location">Location: ${mission.location}</div>
+                <div class="mission-requirements">
+                    <div class="mission-duration">
+                        <span class="time-icon"></span> Duration: ${formatTime(mission.duration)}
+                    </div>
+                    <div class="mission-cost">
+                        <span class="cost-list">Cost: ${formatResourceList(mission.cost)}</span>
+                    </div>
+                </div>
+                <div class="mission-rewards">
+                    <h5>Rewards:</h5>
+                    <ul>
+                        ${Object.entries(mission.reward).map(([resource, amount]) => 
+                            `<li><span class="resource-icon ${resource}"></span> ${amount} ${resource}</li>`
+                        ).join('')}
+                        ${mission.reputationGain ? `<li><span class="reputation-icon"></span> +${mission.reputationGain} ${mission.factionId} reputation</li>` : ''}
+                    </ul>
+                </div>
+                <div class="mission-extra">
+                    <p><strong>Bonus:</strong> ${mission.extraSuccess}</p>
+                </div>
+                <div class="mission-actions">
+                    <button class="mission-start-btn" onclick="startMission('${queuedMissionId}')" 
+                        ${startButtonDisabled} title="${startTooltip}">
+                        ${canStartMission ? "Start Mission" : "Cannot Start"}
+                    </button>
+                </div>
             `;
+            
             missionsList.appendChild(missionDiv);
+        });
+    }
+
+    // Set up auto-refresh for mission progress bars
+    if (activeMissionId) {
+        setTimeout(updateMissionProgress, 1000);
+    }
+}
+
+// Update just the mission progress without redrawing everything
+function updateMissionProgress() {
+    if (!gameState || !gameState.missions || !gameState.missions.activeMission) return;
+    
+    const mission = gameState.missions.availableMissions[gameState.missions.activeMission];
+    if (!mission) return;
+    
+    const elapsedTime = (Date.now() - gameState.missions.missionStartTime) / 1000;
+    const remainingTime = Math.max(0, mission.duration - elapsedTime);
+    const progressPercent = Math.min(100, (elapsedTime / mission.duration) * 100).toFixed(1);
+    const isComplete = remainingTime <= 0;
+    
+    // Update progress bar
+    const progressBar = document.querySelector('.mission-progress-bar');
+    const timer = document.querySelector('.mission-timer');
+    
+    if (progressBar) {
+        progressBar.style.width = `${progressPercent}%`;
+        
+        if (isComplete && !progressBar.parentElement.parentElement.classList.contains('mission-complete')) {
+            progressBar.parentElement.parentElement.classList.add('mission-complete');
+            flashMissionsTab();
+            
+            // Replace with complete UI without full redraw
+            const missionItem = progressBar.closest('.mission-item');
+            if (missionItem) {
+                const completeNotice = document.createElement('div');
+                completeNotice.className = 'mission-complete-notice pulse-animation';
+                completeNotice.innerHTML = '<span class="complete-icon">✓</span> Mission Complete!';
+                
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'mission-actions';
+                actionsDiv.innerHTML = `
+                    <button class="mission-complete-btn glow-effect" onclick="completeMission('${gameState.missions.activeMission}')">
+                        Collect Rewards
+                    </button>
+                `;
+                
+                // Find the status div and replace it
+                const statusDiv = missionItem.querySelector('.mission-status');
+                if (statusDiv) {
+                    missionItem.insertBefore(completeNotice, statusDiv);
+                    missionItem.appendChild(actionsDiv);
+                    statusDiv.style.display = 'none';
+                }
+            }
         }
-    } else {
-        missionsList.innerHTML = "<p>No missions available.</p>";
+    }
+    
+    if (timer) {
+        timer.textContent = isComplete ? "COMPLETE" : formatTime(remainingTime);
+    }
+    
+    // Only continue auto-updating if mission is still active
+    if (!isComplete) {
+        setTimeout(updateMissionProgress, 1000);
+    }
+}
+
+// Function to make the missions tab flash when a mission is complete
+function flashMissionsTab() {
+    const missionsTab = document.querySelector('button[data-tab="missions-tab"]');
+    if (missionsTab) {
+        // Add flashing class
+        missionsTab.classList.add('tab-flashing');
+        
+        // Remove flashing when user clicks the tab
+        missionsTab.addEventListener('click', function onTabClick() {
+            missionsTab.classList.remove('tab-flashing');
+            missionsTab.removeEventListener('click', onTabClick);
+        }, { once: true });
     }
 }
 
 // --- Integrate into existing functions ---
 
-// Modify updateAllDisplays to include missions
-function updateAllDisplays() {
-    console.log("DEBUG: updateAllDisplays called.");
-    updateBoostsDisplay();
-    updateItemsDisplay();
-    updateTechTreeDisplay();
-    updateTerritoriesDisplay();
-    updateMissionsDisplay(); // Ensure this line is present
-    updateAchievementsDisplay();
-    updatePrestigeButton();
-}
-
-// Modify gameLoop to check for mission completion
-function gameLoop() {
-    const now = Date.now();
-    const delta = (now - gameState.lastUpdate) / 1000; // Time difference in seconds
-
-    updateRates(); // Recalculate rates based on current boosts, items, etc.
-
-    // Generate resources
-    for (const resource in gameState.rates) {
-        gameState.resources[resource] += gameState.rates[resource] * delta;
-    }
-
-    // Check for mission completion (Ensure this block is present)
-    if (gameState.missions && gameState.missions.activeMission && gameState.missions.missionStartTime) {
-        const mission = gameState.missions.availableMissions[gameState.missions.activeMission];
-        if (mission) { // Check if mission exists before accessing duration
-            const elapsedTime = (now - gameState.missions.missionStartTime) / 1000;
-            if (elapsedTime >= mission.duration) {
-                completeMission(gameState.missions.activeMission);
-            } else {
-                // Update mission progress display less frequently if performance is an issue
-                 if (Date.now() % 1000 < 100) { // Update roughly once per second
-                     updateMissionsDisplay();
-                 }
-            }
-        } else {
-             console.error(`Invalid active mission ID: ${gameState.missions.activeMission}`);
-             gameState.missions.activeMission = null;
-             gameState.missions.missionStartTime = null;
-        }
-    }
-
-    updateResourceDisplay(); // Update resource values in the UI
-    updateButtonStates(); // Update button disabled states
-    
-    // Add safe check for checkProgressionTriggers function
-    if (typeof checkProgressionTriggers === 'function') {
-        try {
-            checkProgressionTriggers();
-        } catch (error) {
-            console.warn("Error in progression system:", error);
-        }
-    }
-
-    gameState.lastUpdate = now;
-}
+// Using main updateAllDisplays function from line ~2404
+// No duplicate needed here
 
 // Modify or Add updateButtonStates to include missions
 function updateButtonStates() {
@@ -2886,34 +3871,49 @@ function updateButtonStates() {
 
 // --- Modal Functions ---
 function showModal(title, contentHTML) {
-    const modal = document.getElementById("modal");
-    const modalTitle = document.getElementById("modal-title");
-    const modalContent = document.getElementById("modal-content"); // Target the correct content div
-
-    if (modal && modalTitle && modalContent) {
-        modalTitle.textContent = title;
-        modalContent.innerHTML = contentHTML; // Use innerHTML to render HTML content
-        modal.style.display = "flex"; // Use flex instead of block for centering
-    } else {
-        console.error("Modal elements not found!");
+    console.log(`Showing modal: ${title}`);
+    
+    try {
+        const modal = document.getElementById("modal");
+        if (!modal) {
+            console.error("Modal element not found!");
+            return;
+        }
+        
+        // Set title
+        const titleElement = document.getElementById("modal-title");
+        if (titleElement) {
+            titleElement.textContent = title;
+        }
+        
+        // Set content
+        const contentElement = document.getElementById("modal-content");
+        if (contentElement) {
+            contentElement.innerHTML = contentHTML;
+        }
+        
+        // Show modal
+        modal.style.display = "block";
+        
+        // Play sound
+        playSound("sounds/click.wav");
+        
+        console.log("Modal displayed successfully");
+    } catch (error) {
+        console.error("Error showing modal:", error);
     }
 }
-window.showModal = showModal; // Expose globally if needed by progression.js
 
 function closeModal() {
-    const modal = document.getElementById("modal");
-    if (modal) {
-        modal.style.display = "none";
-        // Clear content to prevent old buttons from persisting
-        const modalContent = document.getElementById("modal-content");
-        if (modalContent) {
-            modalContent.innerHTML = "";
+    try {
+        const modal = document.getElementById("modal");
+        if (modal) {
+            modal.style.display = "none";
         }
-    } else {
-        console.error("Modal element not found!");
+    } catch (error) {
+        console.error("Error closing modal:", error);
     }
 }
-window.closeModal = closeModal; // Expose globally for onclick in modal
 
 // --- Other Helper Functions ---
 
@@ -3275,11 +4275,26 @@ function resetAfterAttack(wasSuccessful) {
         gameState.missions.activeMission = null;
     }
 
-    /* Preserve achievements but reset unlocked tabs */
+    /* Preserve achievements and required progression data */
+    const currentAchievements = gameState.progression && gameState.progression.achievements ? gameState.progression.achievements : {};
+    
+    // Reset progression but keep achievements and initialize required objects
     gameState.progression = {
         unlockedTabs: ["boosts-tab"],
-        achievements: gameState.progression.achievements || {}
+        achievements: currentAchievements,
+        milestones: {},
+        storyEvents: {}
     };
+
+    // Increment loop count for a new run
+    gameState.loopCount = (gameState.loopCount || 0) + 1;
+    console.log(`Starting new game loop: ${gameState.loopCount}`);
+    
+    // Set randomized flag to false to ensure randomizer runs again
+    gameState.randomized = false;
+    
+    // Initialize a new randomizer run with the new loop count
+    initRandomizer();
 
     if (wasSuccessful) {
         addLogMessage(`Attack successful! GigaCorp defeated! Gained ${gameState.resources.gigaTech} GigaTech.`);
@@ -3302,7 +4317,7 @@ let dialogueCharacters = {
         name: "Turing",
         portrait: "images/Turing_portrait.png",
         hasAnimation: true,
-        animationSprite: "images/turing_portrait.png",
+        animationSprite: "images/Turing_portrait.png",
         voice: "sounds/click.wav" // Placeholder - replace with actual voice sound
     }
 };
@@ -3436,117 +4451,124 @@ let dialogues = {
 
 // Start displaying a dialogue sequence
 function showDialogue(dialogueId) {
-    if (!dialogues[dialogueId]) {
-        console.error(`Dialogue '${dialogueId}' not found!`);
+    console.log(`Attempting to show dialogue: ${dialogueId}`);
+    
+    // Validate dialogue exists
+    if (!dialogues || !dialogues[dialogueId]) {
+        console.error(`Dialogue '${dialogueId}' not found!`, dialogues);
         return;
     }
     
-    // Set current dialogue
-    currentDialogue = dialogueId;
-    currentDialogueStep = 0;
-    
-    // Display first step
-    displayDialogueStep();
-    
-    // Show dialogue box
-    const dialogueBox = document.getElementById("dialogue-box");
-    if (dialogueBox) {
+    try {
+        // Set current dialogue
+        currentDialogue = dialogueId;
+        currentDialogueStep = 0;
+        
+        // Ensure dialogue box exists
+        const dialogueBox = document.getElementById("dialogue-box");
+        if (!dialogueBox) {
+            console.error("Dialogue box element not found!");
+            return;
+        }
+        
+        // Make dialogue box visible
         dialogueBox.style.display = "block";
+        
+        // Display first dialogue step
+        displayDialogueStep();
+        
+        // Play sound effect for dialogue appearance
+        playSound("sounds/click.wav");
+        
+        console.log(`Dialogue ${dialogueId} shown successfully`);
+    } catch (error) {
+        console.error(`Error showing dialogue ${dialogueId}:`, error);
     }
-    
-    // Play sound effect for dialogue appearance
-    playSound("sounds/click.wav");
 }
 
 // Display current dialogue step
 function displayDialogueStep() {
-    if (!currentDialogue || !dialogues[currentDialogue]) return;
-    
-    const dialogue = dialogues[currentDialogue];
-    if (currentDialogueStep >= dialogue.length) {
-        closeDialogue();
-        return;
-    }
-    
-    const step = dialogue[currentDialogueStep];
-    const character = dialogueCharacters[step.character];
-    
-    if (!character) {
-        console.error(`Character '${step.character}' not found!`);
-        return;
-    }
-    
-    // Set character name
-    const nameElement = document.getElementById("dialogue-character-name");
-    if (nameElement) nameElement.textContent = character.name;
-    
-    // Set character portrait
-    const portraitImgElement = document.getElementById("dialogue-portrait-img");
-    const portraitAnimatedElement = document.getElementById("dialogue-portrait-animated");
-    
-    if (portraitImgElement && portraitAnimatedElement) {
-        if (character.hasAnimation) {
-            portraitImgElement.style.display = "none";
-            portraitAnimatedElement.style.display = "block";
-            // If we have a specific animation sprite, set it
-            if (character.animationSprite) {
-                portraitAnimatedElement.style.backgroundImage = `url('${character.animationSprite}')`;
-            }
-        } else {
-            portraitImgElement.style.display = "block";
-            portraitAnimatedElement.style.display = "none";
-            portraitImgElement.src = character.portrait;
-        }
-    }
-    
-    // Set dialogue text with typing effect
-    const textElement = document.getElementById("dialogue-text");
-    if (textElement) {
-        // Clear previous typing interval
-        if (dialogueTypingInterval) {
-            clearInterval(dialogueTypingInterval);
-            dialogueTypingInterval = null;
+    try {
+        if (!currentDialogue || !dialogues[currentDialogue]) {
+            console.error("No current dialogue to display");
+            return;
         }
         
-        // Start typing effect
-        textElement.textContent = "";
-        textElement.classList.add("dialogue-typing");
+        const dialogue = dialogues[currentDialogue];
+        if (currentDialogueStep >= dialogue.length) {
+            closeDialogue();
+            return;
+        }
         
-        const text = step.text;
-        let charIndex = 0;
+        const step = dialogue[currentDialogueStep];
+        if (!step || !step.character) {
+            console.error("Invalid dialogue step", step);
+            return;
+        }
         
-        dialogueTypingInterval = setInterval(() => {
-            if (charIndex < text.length) {
-                textElement.textContent += text.charAt(charIndex);
-                charIndex++;
-                
-                // Play voice sound occasionally
-                if (character.voice && Math.random() < 0.1) {
-                    playSound(character.voice);
-                }
+        const character = dialogueCharacters[step.character];
+        if (!character) {
+            console.error(`Character '${step.character}' not found!`);
+            return;
+        }
+        
+        // Set character name
+        const nameElement = document.getElementById("dialogue-character-name");
+        if (nameElement) nameElement.textContent = character.name;
+        
+        // Set character portrait
+        const portraitImg = document.getElementById("dialogue-portrait-img");
+        const portraitAnimated = document.getElementById("dialogue-portrait-animated");
+        
+        if (portraitImg && portraitAnimated) {
+            if (character.hasAnimation) {
+                portraitImg.style.display = "none";
+                portraitAnimated.style.display = "block";
+                portraitAnimated.style.backgroundImage = `url('${character.animationSprite}')`;
             } else {
-                // Done typing
-                clearInterval(dialogueTypingInterval);
-                dialogueTypingInterval = null;
-                textElement.classList.remove("dialogue-typing");
-                
-                // Update buttons
-                const nextButton = document.getElementById("dialogue-next");
-                if (nextButton) {
-                    if (currentDialogueStep < dialogue.length - 1) {
-                        nextButton.textContent = "Next";
-                    } else {
-                        nextButton.textContent = "Close";
-                    }
-                }
+                portraitImg.style.display = "block";
+                portraitAnimated.style.display = "none";
+                portraitImg.src = character.portrait;
             }
-        }, 30); // Adjust typing speed as needed
-    }
-    
-    // Update next button text
-    const nextButton = document.getElementById("dialogue-next");
-    if (nextButton) {
-        nextButton.textContent = "Skip typing...";
+        }
+        
+        // Set dialogue text with typing effect
+        const textElement = document.getElementById("dialogue-text");
+        if (textElement) {
+            // Clear previous text
+            textElement.textContent = "";
+            textElement.classList.add("dialogue-typing");
+            
+            // Clear previous typing interval
+            if (dialogueTypingInterval) {
+                clearInterval(dialogueTypingInterval);
+            }
+            
+            // Set up typing effect
+            let charIndex = 0;
+            const text = step.text;
+            
+            dialogueTypingInterval = setInterval(() => {
+                if (charIndex < text.length) {
+                    textElement.textContent += text.charAt(charIndex);
+                    charIndex++;
+                    
+                    // Play typing sound occasionally
+                    if (charIndex % 3 === 0 && character.voice) {
+                        const audio = new Audio(character.voice);
+                        audio.volume = 0.05; // Lower volume for typing sounds
+                        audio.play().catch(e => console.error("Error playing typing sound:", e));
+                    }
+                } else {
+                    // Typing complete
+                    clearInterval(dialogueTypingInterval);
+                    dialogueTypingInterval = null;
+                    textElement.classList.remove("dialogue-typing");
+                }
+            }, 30); // Adjust typing speed here
+        }
+    } catch (error) {
+        console.error("Error displaying dialogue step:", error);
     }
 }
 
@@ -3625,6 +4647,8 @@ function preloadDialogueAssets() {
 window.showDialogue = showDialogue;
 window.nextDialogue = nextDialogue;
 window.closeDialogue = closeDialogue;
+window.showModal = showModal;
+window.closeModal = closeModal;
 
 // Add preloadDialogueAssets to initialization
 document.addEventListener("DOMContentLoaded", function() {
@@ -3634,6 +4658,993 @@ document.addEventListener("DOMContentLoaded", function() {
     preloadDialogueAssets();
 });
 
+// Wrapper function to check progression triggers
+function checkProgressionTriggers() {
+    // Call the progression.js version if it exists
+    if (window.checkProgressionTriggers && typeof window.checkProgressionTriggers === 'function') {
+        try {
+            window.checkProgressionTriggers();
+        } catch (error) {
+            console.error("Error checking progression triggers:", error);
+        }
+    } else {
+        console.warn("checkProgressionTriggers not found in window scope");
+    }
+}
 
+// Add resources panel scroll effect
+window.addEventListener('scroll', function() {
+    const resourcesPanel = document.querySelector('.resources-panel');
+    const header = document.querySelector('.game-header');
+    
+    if (resourcesPanel && header) {
+        if (window.scrollY > header.offsetHeight) {
+            resourcesPanel.classList.add('scrolled');
+        } else {
+            resourcesPanel.classList.remove('scrolled');
+        }
+    }
+});
 
+// Expose functions needed by HTML onclick handlers to the global scope
+window.mineCredits = mineCredits;
+window.collectTechPoints = collectTechPoints;
+
+// Function to initialize randomizer
+function initRandomizer() {
+    // Make sure window.randomizer exists
+    if (!window.randomizer) {
+        console.error("Randomizer object not found, skipping initialization");
+        return;
+    }
+    
+    console.log("Initializing randomizer for game...");
+    
+    // Initialize with player info
+    const playerId = gameState.playerId || "player" + Math.floor(Math.random() * 10000);
+    const loopIndex = gameState.loopCount || 0;
+    
+    // Store player ID for consistency
+    gameState.playerId = playerId;
+    
+    // Initialize randomizer
+    window.randomizer.init(playerId, loopIndex, Date.now());
+    
+    // Apply to game state
+    const success = window.randomizer.applyToGameState(gameState);
+    
+    if (success) {
+        console.log("Randomizer successfully applied to game state");
+        
+        // Mark that randomizer has been applied to this game session
+        gameState.randomized = true;
+        
+        // Save the game after applying randomizer
+        saveGame();
+        
+        // Update UI displays
+        updateAllDisplays();
+        
+        // Update randomizer tab if it exists
+        const randomizerTab = document.getElementById('randomizer-tab');
+        if (randomizerTab) {
+            window.randomizer.renderUI('randomizer-tab');
+        }
+    } else {
+        console.error("Failed to apply randomizer to game state");
+    }
+}
+
+// Helper function to draw a connection between tech nodes
+function drawTechConnection(connection, fromTech, toTech, container, isCompleted) {
+    // Skip specific diagonal connections that cause visual issues
+    const skipConnections = [
+        // Skip the diagonal connection from roboticAutomation to aiCoordination
+        {from: 'roboticAutomation', to: 'aiCoordination'},
+        // Skip the diagonal connection from neuralHacking to aiCoordination
+        {from: 'neuralHacking', to: 'aiCoordination'}
+    ];
+    
+    // Check if this connection should be skipped
+    for (const skipConn of skipConnections) {
+        if (connection.from === skipConn.from && connection.to === skipConn.to) {
+            console.log(`Skipping problematic diagonal connection: ${connection.from} to ${connection.to}`);
+            return; // Skip drawing this connection
+        }
+    }
+    
+    // The final 6 nodes that need special SVG handling
+    const specialNodes = ['viralNetworking', 'quantumComputing', 'mindControlDisruption', 
+                        'aiCoordination', 'quantumEncryption', 'collectiveConsciousness'];
+    
+    // Check if both nodes in this connection are special nodes
+    const isSpecialConnection = specialNodes.includes(connection.from) && specialNodes.includes(connection.to);
+    
+    // Center positions for each node
+    const fromX = fromTech.position.x;
+    const fromY = fromTech.position.y;
+    const toX = toTech.position.x;
+    const toY = toTech.position.y;
+    
+    // Draw special connections using SVG for perfect alignment
+    if (isSpecialConnection) {
+        // Create SVG element for a perfect line connection
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        
+        // Set SVG to cover entire container area
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("height", "100%");
+        svg.style.position = "absolute";
+        svg.style.left = "0";
+        svg.style.top = "0";
+        svg.style.pointerEvents = "none";
+        svg.style.zIndex = "1"; // Between nodes and regular connections
+        
+        // Create line element
+        const line = document.createElementNS(svgNS, "line");
+        line.setAttribute("x1", `${fromX}%`);
+        line.setAttribute("y1", `${fromY}%`);
+        line.setAttribute("x2", `${toX}%`);
+        line.setAttribute("y2", `${toY}%`);
+        
+        // Set line styling
+        line.setAttribute("stroke", isCompleted ? "#00ff00" : "#00ffff");
+        line.setAttribute("stroke-width", "8");
+        line.setAttribute("stroke-opacity", "0.7");
+        
+        // Add glow effect
+        const glowColor = isCompleted ? "rgba(0, 255, 0, 0.8)" : "rgba(0, 255, 255, 0.8)";
+        line.setAttribute("filter", "drop-shadow(0 0 8px " + glowColor + ")");
+        
+        // Add line to SVG and SVG to container
+        svg.appendChild(line);
+        container.appendChild(svg);
+        
+        console.log(`Created SVG line for special connection: ${connection.from} to ${connection.to}`);
+        return; // Skip the regular connection drawing
+    }
+    
+    // For regular connections, continue with the original CSS transform method
+    // Calculate direct line between centers
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    let baseDistance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Adaptive extension factor
+    let extensionFactor = 1.2; // Base extension (20% longer)
+    
+    // For longer distances, gradually reduce the extension factor
+    if (baseDistance > 30) {
+        extensionFactor = 1.0 + (0.2 * (40 / baseDistance));
+    }
+    
+    // Apply extension factor to get the distance
+    const distance = baseDistance * extensionFactor;
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    
+    // Create connection element
+    const connectionElement = document.createElement("div");
+    connectionElement.classList.add("tech-connection");
+    if (isCompleted) {
+        connectionElement.classList.add("completed");
+    }
+    
+    // Position and rotate connection
+    connectionElement.style.left = `${fromX}%`;
+    connectionElement.style.top = `${fromY}%`;
+    connectionElement.style.width = `${distance}%`;
+    connectionElement.style.transform = `rotate(${angle}deg)`;
+    
+    container.appendChild(connectionElement);
+    
+    console.log(`Created CSS connection: ${connection.from} to ${connection.to}, distance=${baseDistance.toFixed(1)}, final=${distance.toFixed(1)}`);
+}
+
+// Helper function to add connection points to a tech node
+function addConnectionPoints(nodeElement) {
+    // Add connection points in four directions
+    const directions = ['input', 'output', 'top', 'bottom'];
+    
+    directions.forEach(direction => {
+        const connectionPoint = document.createElement('div');
+        connectionPoint.classList.add('tech-node-connection-point', direction);
+        nodeElement.appendChild(connectionPoint);
+    });
+}
+
+// Debug function to check tech tree problems
+function debugTechTree() {
+    console.log("=== TECH TREE DEBUG ===");
+    
+    // Check if tech-tree-container exists
+    const techTreeContainer = document.getElementById("tech-tree-container");
+    console.log("Tech tree container exists:", !!techTreeContainer);
+    
+    if (techTreeContainer) {
+        console.log("Container dimensions:", 
+            "width=" + techTreeContainer.offsetWidth + "px", 
+            "height=" + techTreeContainer.offsetHeight + "px");
+        console.log("Container styles:", 
+            "display=" + getComputedStyle(techTreeContainer).display,
+            "position=" + getComputedStyle(techTreeContainer).position,
+            "overflow=" + getComputedStyle(techTreeContainer).overflow);
+    }
+    
+    // Check gameState.techTree
+    console.log("gameState exists:", !!gameState);
+    console.log("gameState.techTree exists:", !!(gameState && gameState.techTree));
+    
+    if (gameState && gameState.techTree) {
+        const techCount = Object.keys(gameState.techTree).length;
+        console.log("Number of tech entries:", techCount);
+        
+        // Check a sample tech entry
+        const sampleTechId = Object.keys(gameState.techTree)[0];
+        const sampleTech = gameState.techTree[sampleTechId];
+        console.log("Sample tech entry:", sampleTechId, sampleTech);
+        
+        // Check if position properties exist
+        console.log("Sample tech has position:", !!(sampleTech && sampleTech.position));
+        if (sampleTech && sampleTech.position) {
+            console.log("Position values:", sampleTech.position.x, sampleTech.position.y);
+        }
+    }
+    
+    // Check tech nodes
+    const techNodes = document.querySelectorAll(".tech-node");
+    console.log("Number of tech nodes rendered:", techNodes.length);
+    
+    if (techNodes.length > 0) {
+        const sampleNode = techNodes[0];
+        console.log("Sample node styles:", 
+            "left=" + sampleNode.style.left, 
+            "top=" + sampleNode.style.top,
+            "display=" + getComputedStyle(sampleNode).display,
+            "position=" + getComputedStyle(sampleNode).position,
+            "visibility=" + getComputedStyle(sampleNode).visibility);
+    }
+    
+    console.log("=== END TECH TREE DEBUG ===");
+}
+
+// Add an event listener for window resize to fix tech connections
+window.addEventListener('resize', function() {
+    // Only update if we're on the tech tree tab
+    const techTreeTab = document.getElementById('techTree-tab');
+    if (techTreeTab && techTreeTab.classList.contains('active')) {
+        updateTechTreeDisplay();
+    }
+});
+
+// Add window load event to ensure tech tree is properly drawn after all resources load
+window.addEventListener('load', function() {
+    // Update tech tree after window fully loads (all resources)
+    const techTreeTab = document.getElementById('techTree-tab');
+    if (techTreeTab && techTreeTab.classList.contains('active')) {
+        console.log("Window loaded, updating tech tree connections");
+        setTimeout(() => {
+            updateTechTreeDisplay();
+        }, 100);
+    }
+});
+
+// Accept a mission through dialogue and add it to queue
+function acceptMission(missionId) {
+    console.log(`Accepting mission: ${missionId}`);
+    if (!gameState || !gameState.missions) {
+        console.error("gameState or gameState.missions is not defined!");
+        return;
+    }
+
+    // Convert IDs like "M-001" to the proper format if needed
+    if (!missionId.startsWith('M-') && !isNaN(parseInt(missionId))) {
+        missionId = `M-${missionId.toString().padStart(3, '0')}`;
+    }
+
+    const mission = gameState.missions.availableMissions[missionId];
+    if (!mission) {
+        addLogMessage(`Mission with ID ${missionId} not found.`);
+        console.error(`Mission not found: ${missionId}`);
+        return;
+    }
+
+    // Check if mission is already in queue
+    if (gameState.missions.queue && gameState.missions.queue.includes(missionId)) {
+        addLogMessage(`Mission "${mission.name}" is already in your queue.`);
+        return;
+    }
+
+    // Check if mission is already active
+    if (gameState.missions.activeMission === missionId) {
+        addLogMessage(`Mission "${mission.name}" is already in progress.`);
+        return;
+    }
+
+    // Initialize queue if needed
+    if (!gameState.missions.queue) {
+        gameState.missions.queue = [];
+    }
+
+    // Add mission to queue and mark as unlocked
+    gameState.missions.queue.push(missionId);
+    mission.unlocked = true;
+    
+    // Show mission acceptance notification
+    addLogMessage(`Mission "${mission.name}" added to your queue.`);
+    showNotification(`New Mission: ${mission.name}`, `Mission added to your queue. Visit the Missions tab to start it.`);
+    
+    // Update the missions display
+    updateMissionsDisplay();
+    
+    // Flash the missions tab to draw attention
+    flashMissionsTab();
+}
+
+// Start a mission from the queue
+function startMission(missionId) {
+    console.log(`Starting mission: ${missionId}`);
+    if (!gameState || !gameState.missions) {
+        console.error("gameState or gameState.missions is not defined!");
+        return;
+    }
+
+    // Check if another mission is already active
+    if (gameState.missions.activeMission) {
+        addLogMessage("You must complete your current mission before starting a new one.");
+        return;
+    }
+
+    // Check if mission exists and is in queue
+    if (!gameState.missions.availableMissions[missionId]) {
+        console.error(`Mission not found: ${missionId}`);
+        return;
+    }
+
+    if (!gameState.missions.queue || !gameState.missions.queue.includes(missionId)) {
+        console.error(`Mission ${missionId} is not in the queue`);
+        return;
+    }
+
+    const mission = gameState.missions.availableMissions[missionId];
+
+    // Check if player can afford the mission cost
+    if (mission.cost) {
+        for (const resource in mission.cost) {
+            if (gameState.resources[resource] === undefined || 
+                gameState.resources[resource] < mission.cost[resource]) {
+                addLogMessage(`Not enough ${resource} to start this mission.`);
+                return;
+            }
+        }
+
+        // Deduct the cost
+        for (const resource in mission.cost) {
+            gameState.resources[resource] -= mission.cost[resource];
+            updateResourceDisplay(); // Update resource display after deduction
+        }
+    }
+
+    // Remove from queue
+    gameState.missions.queue = gameState.missions.queue.filter(id => id !== missionId);
+
+    // Set as active mission
+    gameState.missions.activeMission = missionId;
+    gameState.missions.missionStartTime = Date.now();
+    mission.notifiedComplete = false;
+
+    // Display notification
+    addLogMessage(`Started mission: ${mission.name}`);
+    playSound("sounds/mission_start.wav");
+
+    // Update UI
+    updateMissionsDisplay();
+}
+
+// Complete a mission and get rewards
+function completeMission(missionId) {
+    console.log(`Completing mission: ${missionId}`);
+    if (!gameState || !gameState.missions) {
+        console.error("gameState or gameState.missions is not defined!");
+        return;
+    }
+
+    // Check if this is indeed the active mission
+    if (gameState.missions.activeMission !== missionId) {
+        console.error(`Mission ${missionId} is not the active mission`);
+        return;
+    }
+
+    const mission = gameState.missions.availableMissions[missionId];
+    if (!mission) {
+        console.error(`Mission not found: ${missionId}`);
+        return;
+    }
+
+    // Check if mission is actually complete (timer expired)
+    const elapsedTime = (Date.now() - gameState.missions.missionStartTime) / 1000;
+    if (elapsedTime < mission.duration) {
+        addLogMessage(`Mission ${mission.name} is not yet complete. Please wait.`);
+        return;
+    }
+
+    // Award rewards
+    if (mission.reward) {
+        let rewardText = "Received: ";
+        for (const resource in mission.reward) {
+            // Apply the reward
+            if (gameState.resources[resource] !== undefined) {
+                gameState.resources[resource] += mission.reward[resource];
+                rewardText += `${mission.reward[resource]} ${resource}, `;
+                
+                // Show particle effects for rewards
+                showResourceParticle(resource, mission.reward[resource]);
+            }
+        }
+        rewardText = rewardText.slice(0, -2); // Remove trailing comma and space
+        addLogMessage(rewardText);
+    }
+
+    // Apply faction reputation gain if specified
+    if (mission.factionId && mission.reputationGain && window.aiDirector) {
+        window.aiDirector.applyReputationChange(mission.factionId, mission.reputationGain, gameState);
+        addLogMessage(`Gained ${mission.reputationGain} reputation with ${mission.factionId} faction.`);
+    }
+
+    // Show completion dialogue if available
+    if (mission.completionDialogueId) {
+        showDialogue(mission.completionDialogueId);
+    }
+
+    // Reset active mission
+    gameState.missions.activeMission = null;
+    gameState.missions.missionStartTime = null;
+
+    // Add to completed missions
+    if (!gameState.missions.completedMissions) {
+        gameState.missions.completedMissions = [];
+    }
+    gameState.missions.completedMissions.push(missionId);
+
+    // Display notification
+    addLogMessage(`Mission complete: ${mission.name}`);
+    playSound("sounds/mission_complete.wav");
+
+    // Update UI
+    updateMissionsDisplay();
+    updateResourceDisplay();
+}
+
+// Update the missions tab display
+function updateMissionsDisplay() {
+    const missionsList = document.getElementById("missions-list");
+    if (!missionsList) {
+        return;
+    }
+    
+    if (!gameState || !gameState.missions) {
+        missionsList.innerHTML = "<p>Loading missions...</p>";
+        return;
+    }
+
+    missionsList.innerHTML = ""; // Clear previous list
+
+    // Get current mission state
+    const activeMissionId = gameState.missions.activeMission;
+    const missionStartTime = gameState.missions.missionStartTime;
+    const queuedMissions = gameState.missions.queue || [];
+
+    // If no active mission and no queued missions, show help text
+    if (!activeMissionId && queuedMissions.length === 0) {
+        const helpText = document.createElement("div");
+        helpText.className = "mission-help-text";
+        helpText.innerHTML = `
+            <p>No missions are currently available.</p>
+            <p>Visit faction leaders in the Factions tab to receive missions.</p>
+        `;
+        missionsList.appendChild(helpText);
+        return;
+    }
+
+    // ---------- Display active mission ----------
+    if (activeMissionId && missionStartTime && gameState.missions.availableMissions[activeMissionId]) {
+        const mission = gameState.missions.availableMissions[activeMissionId];
+        const elapsedTime = (Date.now() - missionStartTime) / 1000; // in seconds
+        const remainingTime = Math.max(0, mission.duration - elapsedTime);
+        const progressPercent = Math.min(100, (elapsedTime / mission.duration) * 100).toFixed(1);
+        const isComplete = remainingTime <= 0;
+
+        // Create section header
+        const activeHeader = document.createElement("h3");
+        activeHeader.textContent = "Active Mission";
+        activeHeader.className = "mission-section-header";
+        missionsList.appendChild(activeHeader);
+
+        const missionDiv = document.createElement("div");
+        missionDiv.className = isComplete ? 
+            "mission-item mission-in-progress mission-complete" : 
+            "mission-item mission-in-progress";
+        
+        // If mission is complete, flash the missions tab
+        if (isComplete && !mission.notifiedInTab) {
+            mission.notifiedInTab = true;
+            flashMissionsTab();
+        }
+        
+        let missionHTML = `
+            <div class="mission-header">
+                <h4>${mission.name}</h4>
+                <span class="mission-faction">${mission.factionId || "Independent"}</span>
+            </div>
+            <p class="mission-description">${mission.desc}</p>
+            <div class="mission-location">Location: ${mission.location}</div>
+            <div class="mission-progress-container">
+                <div class="mission-progress-bar" style="width: ${progressPercent}%;">
+                    <span class="mission-timer">${isComplete ? "COMPLETE" : formatTime(remainingTime)}</span>
+                </div>
+            </div>
+        `;
+        
+        if (isComplete) {
+            missionHTML += `
+                <div class="mission-complete-notice pulse-animation">
+                    <span class="complete-icon">✓</span> Mission Complete!
+                </div>
+                <div class="mission-rewards">
+                    <h5>Rewards:</h5>
+                    <ul>
+                        ${Object.entries(mission.reward).map(([resource, amount]) => 
+                            `<li><span class="resource-icon ${resource}"></span> ${amount} ${resource}</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+                <div class="mission-actions">
+                    <button class="mission-complete-btn glow-effect" onclick="completeMission('${activeMissionId}')">
+                        Collect Rewards
+                    </button>
+                </div>
+            `;
+        } else {
+            missionHTML += `
+                <div class="mission-status">
+                    <span class="mission-followers-committed">
+                        <span class="followers-icon"></span> ${mission.cost.followers || 0} followers committed
+                    </span>
+                </div>
+                <div class="mission-rewards">
+                    <h5>Expected Rewards:</h5>
+                    <ul>
+                        ${Object.entries(mission.reward).map(([resource, amount]) => 
+                            `<li><span class="resource-icon ${resource}"></span> ${amount} ${resource}</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+                <div class="mission-extra">
+                    <p><strong>Bonus:</strong> ${mission.extraSuccess}</p>
+                </div>
+            `;
+        }
+        
+        missionDiv.innerHTML = missionHTML;
+        missionsList.appendChild(missionDiv);
+        
+        // Add separator if we have queued missions to display
+        if (queuedMissions.length > 0) {
+            const separator = document.createElement("hr");
+            missionsList.appendChild(separator);
+        }
+    }
+
+    // ---------- Display queued missions ----------
+    if (queuedMissions.length > 0) {
+        // Create section header
+        const queueHeader = document.createElement("h3");
+        queueHeader.textContent = "Mission Queue";
+        queueHeader.className = "mission-section-header";
+        missionsList.appendChild(queueHeader);
+
+        queuedMissions.forEach(queuedMissionId => {
+            const mission = gameState.missions.availableMissions[queuedMissionId];
+            if (!mission) return; // Skip if mission not found
+            
+            const missionDiv = document.createElement("div");
+            missionDiv.className = "mission-item mission-queued";
+            
+            let canStartMission = true;
+            let startButtonDisabled = "";
+            let startTooltip = "";
+            
+            // Check if player can afford to start mission
+            if (mission.cost) {
+                for (const resource in mission.cost) {
+                    if (gameState.resources[resource] === undefined || 
+                        gameState.resources[resource] < mission.cost[resource]) {
+                        canStartMission = false;
+                        startButtonDisabled = "disabled";
+                        startTooltip = `Need more ${resource}`;
+                        break;
+                    }
+                }
+            }
+            
+            // Check if another mission is active
+            if (activeMissionId) {
+                canStartMission = false;
+                startButtonDisabled = "disabled";
+                startTooltip = "Complete active mission first";
+            }
+            
+            missionDiv.innerHTML = `
+                <div class="mission-header">
+                    <h4>${mission.name}</h4>
+                    <span class="mission-faction">${mission.factionId || "Independent"}</span>
+                </div>
+                <p class="mission-description">${mission.desc}</p>
+                <div class="mission-location">Location: ${mission.location}</div>
+                <div class="mission-requirements">
+                    <div class="mission-duration">
+                        <span class="time-icon"></span> Duration: ${formatTime(mission.duration)}
+                    </div>
+                    <div class="mission-cost">
+                        <span class="cost-list">Cost: ${formatResourceList(mission.cost)}</span>
+                    </div>
+                </div>
+                <div class="mission-rewards">
+                    <h5>Rewards:</h5>
+                    <ul>
+                        ${Object.entries(mission.reward).map(([resource, amount]) => 
+                            `<li><span class="resource-icon ${resource}"></span> ${amount} ${resource}</li>`
+                        ).join('')}
+                        ${mission.reputationGain ? `<li><span class="reputation-icon"></span> +${mission.reputationGain} ${mission.factionId} reputation</li>` : ''}
+                    </ul>
+                </div>
+                <div class="mission-extra">
+                    <p><strong>Bonus:</strong> ${mission.extraSuccess}</p>
+                </div>
+                <div class="mission-actions">
+                    <button class="mission-start-btn" onclick="startMission('${queuedMissionId}')" 
+                        ${startButtonDisabled} title="${startTooltip}">
+                        ${canStartMission ? "Start Mission" : "Cannot Start"}
+                    </button>
+                </div>
+            `;
+            
+            missionsList.appendChild(missionDiv);
+        });
+    }
+
+    // Set up auto-refresh for mission progress bars
+    if (activeMissionId) {
+        setTimeout(updateMissionProgress, 1000);
+    }
+}
+
+// Sample mission dialogues
+const missionDialogues = {
+    mission_spreadRumors: [
+        {
+            character: "hacker",
+            text: "Hey, I've got a job for you. We need to spread some nasty rumors about GigaCorp in the downtown area."
+        },
+        {
+            character: "hacker",
+            text: "Their public image is already taking a hit, but we can make it worse. A few well-placed whispers in the right ears..."
+        },
+        {
+            character: "player",
+            text: "What's in it for me?"
+        },
+        {
+            character: "hacker",
+            text: "Credits, influence, and my eternal gratitude. Plus, if we keep hitting them like this, they'll start making mistakes."
+        },
+        {
+            character: "hacker",
+            text: "So, you in? I'll need a handful of your followers to make this work."
+        }
+    ],
+    mission_spreadRumors_complete: [
+        {
+            character: "hacker",
+            text: "Nice work! Those rumors are spreading like wildfire. GigaCorp's PR team is working overtime to contain it."
+        },
+        {
+            character: "hacker",
+            text: "Here's your cut as promised. And hey, my contacts think more highly of you now. That's always good in this business."
+        },
+        {
+            character: "player",
+            text: "Keep the jobs coming. I've got plenty of followers ready to help."
+        },
+        {
+            character: "hacker",
+            text: "I like your attitude. I'll be in touch soon with something bigger."
+        }
+    ],
+    mission_dataHeist: [
+        {
+            character: "hacker",
+            text: "I found a backdoor into GigaCorp's private data servers. With your team, we could extract some valuable intel."
+        },
+        {
+            character: "hacker",
+            text: "It's risky, but the payoff could be huge. Tech schematics, employee data, corporate secrets..."
+        },
+        {
+            character: "player",
+            text: "What do you need from me?"
+        },
+        {
+            character: "hacker",
+            text: "Some of your best people, and a bit of funding to set up the proper hardware."
+        },
+        {
+            character: "hacker",
+            text: "So, we doing this or what?"
+        }
+    ],
+    mission_dataHeist_complete: [
+        {
+            character: "hacker",
+            text: "We hit the jackpot! The data we extracted is worth its weight in gold."
+        },
+        {
+            character: "hacker",
+            text: "Tech schematics, security protocols, and some juicy corporate secrets. This is going to set GigaCorp back months."
+        },
+        {
+            character: "player",
+            text: "What about security? Any chance they traced us?"
+        },
+        {
+            character: "hacker",
+            text: "Nah, we're clean. Used a dozen proxies and wiped all logs. We're ghosts as far as they're concerned."
+        }
+    ]
+};
+
+// Add mission dialogues to the global dialogues object
+if (typeof window.dialogues === "undefined") {
+    window.dialogues = {};
+}
+Object.assign(window.dialogues, missionDialogues);
+
+// Expose mission functions to the global scope
+window.acceptMission = acceptMission;
+window.startMission = startMission;
+window.completeMission = completeMission;
+
+// Display a notification to the user
+function showNotification(title, message) {
+    // Create notification element if it doesn't exist
+    let notification = document.getElementById('game-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'game-notification';
+        notification.className = 'game-notification';
+        document.body.appendChild(notification);
+    }
+
+    // Set content
+    notification.innerHTML = `
+        <div class="notification-header">
+            <span class="notification-title">${title}</span>
+            <span class="notification-close">×</span>
+        </div>
+        <div class="notification-body">
+            ${message}
+        </div>
+    `;
+
+    // Show the notification
+    notification.classList.add('show');
+
+    // Add close handler
+    const closeBtn = notification.querySelector('.notification-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            notification.classList.remove('show');
+        });
+    }
+
+    // Auto-hide after 5 seconds
+    setTimeout(function() {
+        notification.classList.remove('show');
+    }, 5000);
+}
+
+// Expose global functions
+window.acceptMission = acceptMission;
+window.startMission = startMission;
+window.completeMission = completeMission;
+window.showNotification = showNotification;
+        
+// Function to load missions from CSV file
+function loadMissionsFromCSV() {
+    console.log("Loading missions from CSV file...");
+    
+    // Create a fetch request for the missions.csv file
+    fetch('missions.csv')
+        .then(response => response.text())
+        .then(data => {
+            const lines = data.split('\n');
+            
+            // Skip header line
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue; // Skip empty lines
+                
+                const line = lines[i].replace(/"/g, ''); // Remove quotes
+                const columns = line.split(',');
+                
+                if (columns.length < 9) continue; // Skip incomplete lines
+                
+                const missionId = columns[0].trim();
+                const missionName = columns[1].trim();
+                const missionLocation = columns[2].trim();
+                const missionDuration = parseDuration(columns[3].trim());
+                const missionCooldown = parseDuration(columns[4].trim());
+                const missionSlots = parseInt(columns[5].trim()) || 1;
+                const missionCost = parseCost(columns[6].trim());
+                const missionReward = parseReward(columns[7].trim());
+                const missionExtraSuccess = columns[8].trim();
+                const missionFailure = columns.length > 9 ? columns[9].trim() : "";
+                
+                // Determine the faction based on the location
+                const factionId = determineFactionFromLocation(missionLocation);
+                
+                // Create mission object
+                const mission = {
+                    id: missionId,
+                    name: missionName,
+                    desc: `A mission in ${missionLocation}. ${missionExtraSuccess}`,
+                    location: missionLocation,
+                    cost: missionCost,
+                    duration: missionDuration, // in seconds
+                    cooldown: missionCooldown, // in seconds
+                    slots: missionSlots,
+                    reward: missionReward,
+                    extraSuccess: missionExtraSuccess,
+                    failure: missionFailure,
+                    factionId: factionId,
+                    reputationGain: 5, // Default reputation gain
+                    unlocked: false, // Missions need to be offered by factions first
+                    dialogueId: `mission_${missionId.toLowerCase()}`,
+                    completionDialogueId: `mission_${missionId.toLowerCase()}_complete`
+                };
+                
+                // Add to gameState
+                if (!gameState.missions.availableMissions) {
+                    gameState.missions.availableMissions = {};
+                }
+                gameState.missions.availableMissions[missionId] = mission;
+                console.log(`Loaded mission: ${missionId} - ${missionName}`);
+            }
+            
+            console.log(`Loaded ${Object.keys(gameState.missions.availableMissions).length} missions`);
+        })
+        .catch(error => {
+            console.error("Error loading missions from CSV:", error);
+        });
+}
+
+// Helper function to parse duration strings like "5 min" into seconds
+function parseDuration(durationStr) {
+    if (!durationStr) return 60; // Default 1 minute
+    
+    const parts = durationStr.split(' ');
+    if (parts.length !== 2) return 60;
+    
+    const value = parseFloat(parts[0]);
+    const unit = parts[1].toLowerCase();
+    
+    if (unit.includes('min')) {
+        return value * 60; // Convert minutes to seconds
+    } else if (unit.includes('sec') || unit.includes('s')) {
+        return value; // Already in seconds
+    } else if (unit.includes('hour') || unit.includes('hr')) {
+        return value * 3600; // Convert hours to seconds
+    }
+    
+    return 60; // Default
+}
+
+// Helper function to parse cost strings like "250 Data" or "800 Data + 500 Energy"
+function parseCost(costStr) {
+    if (!costStr) return { followers: 10 }; // Default cost
+    
+    const cost = {};
+    const parts = costStr.split('+');
+    
+    for (let part of parts) {
+        part = part.trim();
+        const match = part.match(/(\d+)\s+(\w+)/);
+        if (match) {
+            const value = parseInt(match[1]);
+            let resource = match[2].toLowerCase();
+            
+            // Map CSV resource names to our resource keys
+            if (resource === 'data') resource = 'techPoints';
+            else if (resource === 'energy') resource = 'energy';
+            else if (resource === 'credits') resource = 'credits';
+            else if (resource === 'followers') resource = 'followers';
+            else if (resource === 'tech' || resource === 'tech points' || resource === 'tech pts') resource = 'techPoints';
+            else if (resource === 'morale') resource = 'influence';
+            
+            cost[resource] = value;
+        }
+    }
+    
+    // Ensure missions always cost followers (gameplay requirement)
+    if (!cost.followers) {
+        cost.followers = 10 + (Object.values(cost).reduce((a, b) => a + b, 0) / 100);
+    }
+    
+    return cost;
+}
+
+// Helper function to parse reward strings like "+1 K Followers" or "+300 Data"
+function parseReward(rewardStr) {
+    if (!rewardStr) return { credits: 50 }; // Default reward
+    
+    const reward = {};
+    const parts = rewardStr.split('+');
+    
+    for (let part of parts) {
+        part = part.trim();
+        if (!part) continue;
+        
+        // Handle different reward formats
+        let value = 0;
+        let resource = '';
+        
+        // Format: "+1 K Followers" or "+300 Data"
+        const kMatch = part.match(/(\d+(?:\.\d+)?)\s*K\s+(\w+)/i);
+        if (kMatch) {
+            value = parseFloat(kMatch[1]) * 1000;
+            resource = kMatch[2].toLowerCase();
+        } else {
+            // Format: "+300 Data"
+            const normalMatch = part.match(/(\d+(?:\.\d+)?)\s+(\w+)/);
+            if (normalMatch) {
+                value = parseFloat(normalMatch[1]);
+                resource = normalMatch[2].toLowerCase();
+            } else {
+                // Format: Special effects like "2 × Productivity (60 s)"
+                // These are handled by extraSuccess and don't convert to a direct resource
+                continue;
+            }
+        }
+        
+        // Map CSV resource names to our resource keys
+        if (resource === 'data') resource = 'techPoints';
+        else if (resource === 'energy') resource = 'energy';
+        else if (resource === 'credits') resource = 'credits';
+        else if (resource === 'followers') resource = 'followers';
+        else if (resource === 'tech' || resource === 'tech points' || resource === 'tech pts') resource = 'techPoints';
+        else if (resource === 'morale') resource = 'influence';
+        
+        reward[resource] = value;
+    }
+    
+    // Ensure missions always give some credits (gameplay requirement)
+    if (Object.keys(reward).length === 0) {
+        reward.credits = 50;
+    }
+    
+    return reward;
+}
+
+// Helper function to determine faction from mission location
+function determineFactionFromLocation(location) {
+    location = location.toLowerCase();
+    
+    if (location.includes('tech') || location.includes('ai lab') || location.includes('bot')) return 'The Bots';
+    if (location.includes('musk') || location.includes('bot bay')) return 'Muskers';
+    if (location.includes('harbor') || location.includes('cryptid')) return 'Cryptids';
+    if (location.includes('shillz') || location.includes('capitol') || location.includes('government')) return 'ShillZ';
+    if (location.includes('living') || location.includes('abandoned')) return 'Cryptids';
+    if (location.includes('giga') || location.includes('metaverse')) return 'GIGACORP';
+    
+    return 'ShillZ';
+}
         

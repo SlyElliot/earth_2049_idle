@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0a0a0a">
-    <title>Earth 2039 - Cyberpunk Idle Game</title> <!-- Updated Title -->
+    <title>Earth 2049 - Cyberpunk Idle Game</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
@@ -82,6 +82,8 @@
                 <button class="operation-button" onclick="collectTechPoints()">Collect Tech Points (5 Credits)</button> <!-- Renamed -->
                 <button class="operation-button" onclick="generateEnergy()">Generate Energy (10 Credits)</button>
                 <button class="operation-button" onclick="upgradeTuring()">Upgrade Turing (Lvl <span id="turing-level">1</span>)</button>
+                <button id="click-multiplier-button" class="operation-button multiplier-button" onclick="cycleClickMultiplier()">Clicks: 1x</button>
+                <span class="multiplier-hint">⟵ Set purchase quantity</span>
             </div>
             
             <!-- Attack GigaCorp Button -->
@@ -326,4 +328,3 @@
     <script src="run_seed_randomizer.js"></script>
 </body>
 </html>
-
